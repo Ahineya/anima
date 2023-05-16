@@ -8,6 +8,19 @@ import {useEffect} from "react";
 import {Sprite} from "../engine/sprite";
 import myImage from "../assets/i.png";
 import myImage2 from "../assets/i2.png";
+import {LeftPanel} from "../components/left-panel/left-panel";
+import {RightPanel} from "../components/right-panel/right-panel";
+import {TimelinePanel} from "../components/timeline-panel/timeline-panel";
+
+function addSprite(gl: WebGLRenderingContext, src: string, name: string) {
+  const image = new Image();
+  image.addEventListener("load", () => {
+    const sprite = new Sprite(gl, image);
+    sprite.name = "Asmodeus";
+    sceneStore.addSprite(sprite);
+  });
+  image.src = src;
+}
 
 export function App() {
 
@@ -18,27 +31,42 @@ export function App() {
       return;
     }
 
-    const image = new Image();
-    image.addEventListener("load", () => {
-      const sprite = new Sprite(gl, image)
-      sceneStore.addSprite(sprite);
-    });
-    image.src = myImage;
+    (async () => {
+      const sprites = await Promise.all([
+        Sprite.create(gl, myImage, {
+          x: 0,
+          y: 0,
+          name: "Asmodeus",
+        }),
 
-    const image2 = new Image();
-    image2.addEventListener("load", () => {
-      const sprite = new Sprite(gl, image2);
-      sprite.x = 512;
-      sprite.zIndex = 1 * 0.001;
-      sceneStore.addSprite(sprite);
-    });
+        Sprite.create(gl, myImage2, {
+          x: 512,
+          y: -512,
+          name: "Queenking",
+          z: 0.001
+        })
+      ]);
 
-    image2.src = myImage2;
+      sprites.forEach((sprite) => {
+        sceneStore.addSprite(sprite);
+      });
+    })();
+
+    return () => {
+      sceneStore.clearSprites();
+    }
   }, [gl]);
 
   return (
-    <Panel>
-        <Viewport />
+    <Panel direction="column">
+      <Panel direction="row">
+        <LeftPanel/>
+        <Panel>
+          <Viewport/>
+        </Panel>
+        <RightPanel/>
+      </Panel>
+      <TimelinePanel/>
     </Panel>
   );
 }

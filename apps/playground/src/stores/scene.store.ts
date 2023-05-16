@@ -19,15 +19,23 @@ class SceneStore {
   });
 
   public scale = new StoreSubject(1);
-
-  public objects = new StoreSubject({} as Record<string, Sprite>);
-
+  public sprites = new StoreSubject({} as Record<string, Sprite>);
   public gl = new StoreSubject<WebGLRenderingContext | null>(null);
-
   public programs = new Map<string, RenderProgram>();
+
+  public selectedSpriteIds = new StoreSubject<string[]>([]);
 
   public setGl(gl: WebGLRenderingContext) {
     this.gl.next(gl);
+  }
+
+  public setSelectedSpriteId(id: string) {
+    this.selectedSpriteIds.next([id]);
+  }
+
+  public clearSprites() {
+    this.selectedSpriteIds.next([]);
+    this.sprites.next({});
   }
 
   public addProgram(name: string, vertexShaderSource: string, fragmentShaderSource: string, bufferInfoArrays: twgl.Arrays, renderType: RenderType) {
@@ -74,9 +82,43 @@ class SceneStore {
   }
 
   public addSprite(sprite: Sprite) {
-    this.objects.next({
-      ...this.objects.getValue(),
+    this.sprites.next({
+      ...this.sprites.getValue(),
       [sprite.id]: sprite,
+    });
+
+    this.setSelectedSpriteId(sprite.id);
+  }
+
+  public setSpritePosition(id: string, x: number, y: number) {
+    const sprite = this.sprites.getValue()[id];
+
+    if (!sprite) {
+      return;
+    }
+
+    sprite.x = x;
+    sprite.y = y;
+
+    this.sprites.next({
+      ...this.sprites.getValue(),
+      [id]: sprite,
+    });
+  }
+
+  public setSpriteSize(id: string, width: number, height: number) {
+    const sprite = this.sprites.getValue()[id];
+
+    if (!sprite) {
+      return;
+    }
+
+    sprite.width = width;
+    sprite.height = height;
+
+    this.sprites.next({
+      ...this.sprites.getValue(),
+      [id]: sprite,
     });
   }
 }

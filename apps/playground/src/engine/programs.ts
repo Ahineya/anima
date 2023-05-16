@@ -9,15 +9,16 @@ type Program = {
   renderType: RenderType;
 }
 
-const spriteVertexShaderSource = `
-attribute vec4 a_position;
-attribute vec2 a_texCoord;
+const spriteVertexShaderSource = `#version 300 es
+in vec4 a_position;
+in vec2 a_texCoord;
 
 uniform mat4 u_model;
 uniform mat4 u_view;
 uniform mat4 u_projection;
 
-varying vec2 v_texCoord;
+
+out vec2 v_texCoord;
 
 void main() {
   gl_Position =  u_projection * u_view * u_model * a_position;
@@ -25,34 +26,45 @@ void main() {
 }
 `;
 
-const spriteFragmentShaderSource = `
+const spriteFragmentShaderSource = `#version 300 es
 precision mediump float;
 
 uniform sampler2D u_texture;
 
-varying vec2 v_texCoord;
+in vec2 v_texCoord;
+
+out vec4 outColor;
 
 void main() {
-  vec4 pixelColor = texture2D(u_texture, v_texCoord);
-  gl_FragColor = pixelColor;
+  vec4 pixelColor = texture(u_texture, v_texCoord);
+  outColor = pixelColor;
 }
 `;
 
-const cameraVertexShaderSource = `
-attribute vec4 a_position;
+const cameraVertexShaderSource = `#version 300 es
+in vec4 a_position;
 
 uniform mat4 u_projection;
 uniform mat4 u_model;
 uniform mat4 u_view;
 
+uniform vec4 u_color;
+
+out vec4 v_color;
+
 void main() {
   gl_Position = u_projection * u_view * u_model * a_position;
+  v_color = u_color;
 }
 `;
 
-const cameraFragmentShaderSource = `
+const cameraFragmentShaderSource = `#version 300 es
+precision lowp float;
+in vec4 v_color;
+out vec4 outColor;
+
 void main() {
-    gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
+    outColor = v_color;
 }
 `;
 

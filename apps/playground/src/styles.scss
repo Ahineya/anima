@@ -1,5 +1,10 @@
 /* You can add global styles to this file, and also import other style files */
 
+// Add Inter font
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@import "./variables.scss";
+
 html, body {
   height: 100%;
   width: 100%;
@@ -8,12 +13,20 @@ html, body {
   overflow: hidden;
 
   overscroll-behavior: none;
+
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 300;
+
+  user-select: none;
 }
 
 *, *:before, *:after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+
 }
 
 #root {

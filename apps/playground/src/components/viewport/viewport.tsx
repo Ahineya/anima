@@ -29,16 +29,21 @@ export const Viewport: FC<IProps> = () => {
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const sceneObjects = useStoreSubscribe(sceneStore.objects);
+  const sprites = useStoreSubscribe(sceneStore.sprites);
+  const selectedSpriteIds = useStoreSubscribe(sceneStore.selectedSpriteIds);
 
-  const sceneObjectsRef = useRef(Object.values(sceneObjects));
-  sceneObjectsRef.current = Object.values(sceneObjects);
+  const selectedSpritesRef = useRef(Object.values(sprites).filter((sprite) => selectedSpriteIds.includes(sprite.id)));
+  selectedSpritesRef.current = Object.values(sprites).filter((sprite) => selectedSpriteIds.includes(sprite.id));
+
+  const sceneObjectsRef = useRef(Object.values(sprites));
+  sceneObjectsRef.current = Object.values(sprites);
 
   const camera = useStoreSubscribe(sceneStore.camera);
   const scale = useStoreSubscribe(sceneStore.scale);
 
   const cameraRef = useRef(camera);
   cameraRef.current = camera;
+
 
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
@@ -99,6 +104,7 @@ export const Viewport: FC<IProps> = () => {
 
     // Enable alpha blending
     gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
     // Resize canvas to match parent container size
     canvas.width = canvas.parentElement?.clientWidth || 0;
@@ -126,7 +132,8 @@ export const Viewport: FC<IProps> = () => {
       twgl.resizeCanvasToDisplaySize(gl.canvas as HTMLCanvasElement);
       gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
-      gl.clearColor(0.5, 0.5, 0.5, 1);
+      gl.clearColor(0.18, 0.18, 0.18, 1);
+
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
 
       twgl.setBuffersAndAttributes(gl, spriteProgram.program, spriteProgram.bufferInfo);
@@ -138,7 +145,7 @@ export const Viewport: FC<IProps> = () => {
 
       gl.useProgram(spriteProgram.program.program);
 
-      sceneObjectsRef.current.sort((a, b) => a.zIndex - b.zIndex ).forEach((sprite) => {
+      sceneObjectsRef.current.sort((a, b) => a.zIndex - b.zIndex).forEach((sprite) => {
         if (!sprite.texture) {
           return;
         }
@@ -165,10 +172,24 @@ export const Viewport: FC<IProps> = () => {
         u_projection: projectionMatrix,
         u_model: twgl.m4.scale(twgl.m4.translate(twgl.m4.identity(), [camera.x, camera.y, 0]), [camera.width, camera.height, 0]),
         u_view: viewMatrix,
+        u_color: [0, 1, 0, 1],
       });
 
       twgl.drawBufferInfo(gl, cameraProgram.bufferInfo, cameraProgram.renderType);
 
+      /**
+       * Render selected sprites box as a rectangle
+       */
+      selectedSpritesRef.current.forEach((sprite) => {
+        twgl.setUniforms(cameraProgram.program, {
+          u_projection: projectionMatrix,
+          u_model: twgl.m4.scale(twgl.m4.translate(twgl.m4.identity(), [sprite.x, sprite.y, sprite.zIndex]), [sprite.width, sprite.height, 0]),
+          u_view: viewMatrix,
+          u_color: [0, 0, 1, 1],
+        });
+
+        twgl.drawBufferInfo(gl, cameraProgram.bufferInfo, cameraProgram.renderType);
+      });
 
       animationFrameId = requestAnimationFrame(render);
     }
