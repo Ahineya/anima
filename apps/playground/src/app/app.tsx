@@ -12,16 +12,6 @@ import {LeftPanel} from "../components/left-panel/left-panel";
 import {RightPanel} from "../components/right-panel/right-panel";
 import {TimelinePanel} from "../components/timeline-panel/timeline-panel";
 
-function addSprite(gl: WebGLRenderingContext, src: string, name: string) {
-  const image = new Image();
-  image.addEventListener("load", () => {
-    const sprite = new Sprite(gl, image);
-    sprite.name = "Asmodeus";
-    sceneStore.addSprite(sprite);
-  });
-  image.src = src;
-}
-
 export function App() {
 
   const gl = useStoreSubscribe(sceneStore.gl);
@@ -46,6 +36,38 @@ export function App() {
           z: 0.001
         })
       ]);
+
+      sprites[0].keyframes = {
+        ...sprites[0].keyframes,
+        position: {
+          24: {
+            frame: 24,
+            x: 512,
+            y: 512,
+            prev: 0,
+            next: 48,
+          },
+          48: {
+            frame: 48,
+            x: 0,
+            y: 0,
+            prev: 24,
+            next: 72,
+          },
+          72: {
+            frame: 72,
+            x: 512,
+            y: 0,
+            prev: 48,
+            next: null,
+          }
+        }
+      }
+
+      sprites[0].keyframesIndexes = {
+        ...sprites[0].keyframesIndexes,
+        position: Object.keys(sprites[0].keyframes.position).map(Number).sort((a, b) => a - b),
+      };
 
       sprites.forEach((sprite) => {
         sceneStore.addSprite(sprite);

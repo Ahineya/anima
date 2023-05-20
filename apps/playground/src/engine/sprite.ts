@@ -1,5 +1,19 @@
 import * as twgl from "twgl.js";
 
+export type KeyframeDoublyLinkedList = {
+  frame: number,
+  next: number | null,
+  prev: number | null,
+}
+
+export type Keyframes = {
+  position: Record<number, {x: number, y: number} & KeyframeDoublyLinkedList>,
+  rotation: Record<number, {angle: number} & KeyframeDoublyLinkedList>,
+  scale: Record<number, {scale: number} & KeyframeDoublyLinkedList>,
+  opacity: Record<number, {opacity: number} & KeyframeDoublyLinkedList>,
+  zIndex: Record<number, {zIndex: number} & KeyframeDoublyLinkedList>,
+}
+
 export class Sprite {
   public texture: WebGLTexture;
   public id: string = crypto.randomUUID();
@@ -11,6 +25,22 @@ export class Sprite {
   public parentAndOrder?: string; // In format parentId:order. Fractional ordering in 63-base system
   public zIndex = 0;
   public name = 'New sprite';
+
+  public keyframes: Keyframes = {
+    position: {},
+    rotation: {},
+    scale: {},
+    opacity: {},
+    zIndex: {},
+  };
+
+  public keyframesIndexes: Record<keyof Keyframes, number[]> = {
+    position: [],
+    rotation: [],
+    scale: [],
+    opacity: [],
+    zIndex: [],
+  }
 
   constructor(private gl: WebGLRenderingContext, private image: HTMLImageElement) {
     this.texture = Sprite.createTexture(gl, image);

@@ -25,6 +25,8 @@ class SceneStore {
 
   public selectedSpriteIds = new StoreSubject<string[]>([]);
 
+  public currentFrame = new StoreSubject(0);
+
   public setGl(gl: WebGLRenderingContext) {
     this.gl.next(gl);
   }
@@ -120,6 +122,10 @@ class SceneStore {
       ...this.sprites.getValue(),
       [id]: sprite,
     });
+  }
+
+  public setCurrentFrame(frame: number) {
+    this.currentFrame.next(frame);
   }
 }
 

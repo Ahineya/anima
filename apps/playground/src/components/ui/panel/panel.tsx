@@ -20,7 +20,7 @@ export const Panel: FC<IProps> = ({
     <div
       className={classNames('panel', className)}
       style={{
-        '--gap': `${gap}px`,
+        '--gap': gap ? `${gap}px` : undefined,
         '--direction': direction,
         ...style
       } as CSSProperties}

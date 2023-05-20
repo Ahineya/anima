@@ -3,11 +3,13 @@ import * as twgl from 'twgl.js';
 import {useStoreSubscribe} from "@anima/use-store-subscribe";
 import {sceneStore} from "../../stores/scene.store";
 import {programs} from "../../engine/programs";
+import {useKeybinding} from "../../hooks/use-keybinding.hook";
+
+const fps = 30;
+const framesLength = 5 * fps;
 
 function createOrthographicProjectionMatrix(width: number, height: number) {
   const aspectRatio = width / height;
-
-  console.log('aspectRatio', aspectRatio);
 
   const left = -aspectRatio * width / 2;
   const right = aspectRatio * width / 2;
@@ -35,15 +37,19 @@ export const Viewport: FC<IProps> = () => {
   const selectedSpritesRef = useRef(Object.values(sprites).filter((sprite) => selectedSpriteIds.includes(sprite.id)));
   selectedSpritesRef.current = Object.values(sprites).filter((sprite) => selectedSpriteIds.includes(sprite.id));
 
-  const sceneObjectsRef = useRef(Object.values(sprites));
-  sceneObjectsRef.current = Object.values(sprites);
+  const spritesRef = useRef(Object.values(sprites).sort((a, b) => a.zIndex - b.zIndex));
+  spritesRef.current = Object.values(sprites).sort((a, b) => a.zIndex - b.zIndex);
 
-  const camera = useStoreSubscribe(sceneStore.camera);
-  const scale = useStoreSubscribe(sceneStore.scale);
+  const playing = useRef(false);
+  const lastPlaying = useRef(false);
 
-  const cameraRef = useRef(camera);
-  cameraRef.current = camera;
+  const deltaStartTime = useRef(0);
+  const startTime = useRef(0);
 
+  useKeybinding(' ', () => {
+    lastPlaying.current = playing.current;
+    playing.current = !playing.current;
+  });
 
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
@@ -79,7 +85,7 @@ export const Viewport: FC<IProps> = () => {
       });
 
       // Clean up textures for all objects
-      sceneObjectsRef.current.forEach((sprite) => {
+      spritesRef.current.forEach((sprite) => {
         if (sprite.texture) {
           gl.deleteTexture(sprite.texture);
         }
@@ -120,16 +126,25 @@ export const Viewport: FC<IProps> = () => {
     }
 
     let animationFrameId: number;
+    twgl.resizeCanvasToDisplaySize(gl.canvas as HTMLCanvasElement, 1 || window.devicePixelRatio);
 
     function render(time: number) {
+      const currentFrame = sceneStore.currentFrame.getValue();
 
-      const slowTime = time * 0.001;
+      if (playing.current && !lastPlaying.current) {
+        startTime.current = time - (currentFrame + 1) * 1000 / fps;
+        lastPlaying.current = true;
+      }
+
+      if (playing.current) {
+        deltaStartTime.current = time - startTime.current;
+      }
 
       if (!gl || !canvas || !spriteProgram || !cameraProgram) {
         return;
       }
 
-      twgl.resizeCanvasToDisplaySize(gl.canvas as HTMLCanvasElement);
+
       gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
       gl.clearColor(0.18, 0.18, 0.18, 1);
@@ -138,6 +153,8 @@ export const Viewport: FC<IProps> = () => {
 
       twgl.setBuffersAndAttributes(gl, spriteProgram.program, spriteProgram.bufferInfo);
 
+      const scale = sceneStore.scale.getValue();
+
       // viewMatrix is camera position. We want to move the camera in the opposite direction of the model when translating
       let viewMatrix = twgl.m4.translate(twgl.m4.identity(), [0, 0, 0].map(v => -v));
       // We want to implement a camera that can pan and zoom. Zooming is done by scaling the view matrix
@@ -145,14 +162,86 @@ export const Viewport: FC<IProps> = () => {
 
       gl.useProgram(spriteProgram.program.program);
 
-      sceneObjectsRef.current.sort((a, b) => a.zIndex - b.zIndex).forEach((sprite) => {
+      spritesRef.current.forEach((sprite) => {
         if (!sprite.texture) {
           return;
         }
 
+        const currentPositionKeyframe = sprite.keyframes.position[currentFrame];
+        const firstPositionKeyframe = sprite.keyframesIndexes.position[0];
+        const lastPositionKeyframe = sprite.keyframesIndexes.position[sprite.keyframesIndexes.position.length - 1];
+
+        let translateVector: [number, number, number] = [sprite.x, sprite.y, sprite.zIndex];
+
+        if (currentPositionKeyframe) {
+          translateVector = [
+            currentPositionKeyframe.x,
+            currentPositionKeyframe.y,
+            sprite.zIndex,
+          ];
+        }
+        //
+        if (lastPositionKeyframe !== undefined && currentFrame > lastPositionKeyframe) {
+          translateVector = [
+            sprite.keyframes.position[lastPositionKeyframe].x,
+            sprite.keyframes.position[lastPositionKeyframe].y,
+            sprite.zIndex,
+          ];
+          // eslint-disable-next-line no-empty
+        } else if (firstPositionKeyframe !== undefined && currentFrame < firstPositionKeyframe) {
+        } else if (!currentPositionKeyframe) {
+          // Probably we are in between two keyframes. We need to interpolate the position
+          // Find the two keyframes that we are in between
+          const kf = sprite.keyframes;
+
+          const previousKeyframe = [...sprite.keyframesIndexes.position].reverse().find((keyframe) => keyframe < currentFrame);
+
+          if (previousKeyframe !== undefined) {
+            const nextKeyframe = kf.position[previousKeyframe].next;
+
+            if (nextKeyframe !== null) {
+              const previousKeyframePosition = kf.position[previousKeyframe];
+              const nextKeyframePosition = kf.position[nextKeyframe];
+
+              const progress = (currentFrame - previousKeyframe) / (nextKeyframe - previousKeyframe);
+
+              // Linear interpolation will do for now. Later we need to implement easing functions, and animation paths
+              // translateVector = [
+              //   previousKeyframePosition.x + (nextKeyframePosition.x - previousKeyframePosition.x) * progress,
+              //   previousKeyframePosition.y + (nextKeyframePosition.y - previousKeyframePosition.y) * progress,
+              //   sprite.zIndex,
+              // ];
+              //
+              // Here is an example of how to implement ease out
+              // const easedProgress = 1 - Math.pow(1 - progress, 2);
+              // translateVector = [
+              //   previousKeyframePosition.x + (nextKeyframePosition.x - previousKeyframePosition.x) * easedProgress,
+              //   previousKeyframePosition.y + (nextKeyframePosition.y - previousKeyframePosition.y) * easedProgress,
+              //   sprite.zIndex,
+              // ];
+
+              // Here is an example of how to implement ease in
+              // const easedProgress = Math.pow(progress, 2);
+              // translateVector = [
+              //   previousKeyframePosition.x + (nextKeyframePosition.x - previousKeyframePosition.x) * easedProgress,
+              //   previousKeyframePosition.y + (nextKeyframePosition.y - previousKeyframePosition.y) * easedProgress,
+              //   sprite.zIndex,
+              // ];
+              //
+              // // Here is an example of how to implement ease in and out
+              const easedProgress = progress < 0.5 ? Math.pow(progress * 2, 2) / 2 : 1 - Math.pow((1 - progress) * 2, 2) / 2;
+              translateVector = [
+                previousKeyframePosition.x + (nextKeyframePosition.x - previousKeyframePosition.x) * easedProgress,
+                previousKeyframePosition.y + (nextKeyframePosition.y - previousKeyframePosition.y) * easedProgress,
+                sprite.zIndex,
+              ];
+            }
+          }
+        }
+
         twgl.setUniforms(spriteProgram.program, {
           u_texture: sprite.texture,
-          u_model: twgl.m4.scale(twgl.m4.translate(twgl.m4.identity(), [sprite.x, sprite.y, sprite.zIndex]), [sprite.width, sprite.height, 0]),
+          u_model: twgl.m4.scale(twgl.m4.translate(twgl.m4.identity(), translateVector), [sprite.width, sprite.height, 0]),
           u_view: viewMatrix,
           u_projection: projectionMatrix,
         });
@@ -167,6 +256,8 @@ export const Viewport: FC<IProps> = () => {
        */
       gl.useProgram(cameraProgram.program.program);
       twgl.setBuffersAndAttributes(gl, cameraProgram.program, cameraProgram.bufferInfo);
+
+      const camera = sceneStore.camera.getValue();
 
       twgl.setUniforms(cameraProgram.program, {
         u_projection: projectionMatrix,
@@ -190,6 +281,14 @@ export const Viewport: FC<IProps> = () => {
 
         twgl.drawBufferInfo(gl, cameraProgram.bufferInfo, cameraProgram.renderType);
       });
+
+      /**
+       * Increment frame if playing. Get current frame based on time and fps. Always start from 0
+       */
+      if (playing.current) {
+        const frame = Math.floor((deltaStartTime.current) / (1000 / fps)) % framesLength;
+        sceneStore.setCurrentFrame(frame);
+      }
 
       animationFrameId = requestAnimationFrame(render);
     }
