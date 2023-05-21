@@ -95,8 +95,6 @@ uniform vec4 u_color;
 out vec4 outColor;
 
 void main() {
-  // Calculate the position of this fragment in pixels.
-
   vec2 pixelPosition = vec2(gl_FragCoord.x, gl_FragCoord.y);
 
   vec2 gridSize = vec2(u_gridSize.x * u_ratio, u_gridSize.y * u_ratio);
@@ -106,7 +104,6 @@ void main() {
   // Calculate the grid cell this pixel is in.
   vec2 gridPosition = mod(pixelPosition, gridSize);
 
-  // If the pixel is on a grid line (within a 1-pixel margin) then draw a line.
   float margin = 1.0;
   if (gridPosition.y < margin || gridPosition.y > gridSize.y - margin) {
 

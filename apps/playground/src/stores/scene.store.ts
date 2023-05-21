@@ -1,5 +1,5 @@
 import {StoreSubject} from "@anima/store-subject";
-import {Sprite} from "../engine/sprite";
+import {Sprite, SpriteFrameState} from "../engine/sprite";
 import * as twgl from "twgl.js";
 import {RenderType} from "../engine/renderType";
 
@@ -10,34 +10,57 @@ type RenderProgram = {
   renderType: number; // gl.TRIANGLES, gl.TRIANGLE_STRIP, gl.TRIANGLE_FAN, gl.LINES, gl.LINE_STRIP, gl.LINE_LOOP, gl.POINTS
 }
 
-class SceneStore {
-  public camera = new StoreSubject({
-    x: 0,
-    y: 0,
-    width: 1024,
-    height: 768//1024,
-  });
+type CameraState = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
 
-  public scale = new StoreSubject(1);
-  public sprites = new StoreSubject({} as Record<string, Sprite>);
+type SceneState = {
+  camera: CameraState;
+  scale: number; // Global scene scale
+  sprites: Record<string, Sprite>; // Sprite id -> Sprite
+  selectedSpriteIds: string[];
+  currentFrame: number;
+}
+
+class SceneStore {
   public gl = new StoreSubject<WebGLRenderingContext | null>(null);
   public programs = new Map<string, RenderProgram>();
 
-  public selectedSpriteIds = new StoreSubject<string[]>([]);
+  public _state = new StoreSubject<SceneState>({
+    camera: {
+      x: 0,
+      y: 0,
+      width: 1024,
+      height: 768 //1024,
+    },
+    scale: 1,
+    sprites: {},
+    currentFrame: 0,
+    selectedSpriteIds: [],
+  });
 
-  public currentFrame = new StoreSubject(0);
+  public nextSpritesParams = new StoreSubject<Record<string, SpriteFrameState>>({});
 
   public setGl(gl: WebGLRenderingContext) {
     this.gl.next(gl);
   }
 
   public setSelectedSpriteId(id: string) {
-    this.selectedSpriteIds.next([id]);
+    this._state.next({
+      ...this._state.getValue(),
+      selectedSpriteIds: [id],
+    });
   }
 
   public clearSprites() {
-    this.selectedSpriteIds.next([]);
-    this.sprites.next({});
+    this._state.next({
+      ...this._state.getValue(),
+      sprites: {},
+      selectedSpriteIds: [],
+    });
   }
 
   public addProgram(name: string, vertexShaderSource: string, fragmentShaderSource: string, bufferInfoArrays: twgl.Arrays, renderType: RenderType) {
@@ -84,16 +107,21 @@ class SceneStore {
   }
 
   public addSprite(sprite: Sprite) {
-    this.sprites.next({
-      ...this.sprites.getValue(),
-      [sprite.id]: sprite,
+    this._state.next({
+      ...this._state.getValue(),
+      sprites: {
+        ...this._state.getValue().sprites,
+        [sprite.id]: sprite,
+      },
     });
 
     this.setSelectedSpriteId(sprite.id);
+
+    this.calculateNextSpritesParams(this.state().currentFrame);
   }
 
   public setSpritePosition(id: string, x: number, y: number) {
-    const sprite = this.sprites.getValue()[id];
+    const sprite = this._state.getValue().sprites[id];
 
     if (!sprite) {
       return;
@@ -102,14 +130,17 @@ class SceneStore {
     sprite.x = x;
     sprite.y = y;
 
-    this.sprites.next({
-      ...this.sprites.getValue(),
-      [id]: sprite,
+    this._state.next({
+      ...this._state.getValue(),
+      sprites: {
+        ...this._state.getValue().sprites,
+        [id]: sprite,
+      },
     });
   }
 
   public setSpriteSize(id: string, width: number, height: number) {
-    const sprite = this.sprites.getValue()[id];
+    const sprite = this._state.getValue().sprites[id];
 
     if (!sprite) {
       return;
@@ -118,14 +149,119 @@ class SceneStore {
     sprite.width = width;
     sprite.height = height;
 
-    this.sprites.next({
-      ...this.sprites.getValue(),
-      [id]: sprite,
+    this._state.next({
+      ...this._state.getValue(),
+      sprites: {
+        ...this._state.getValue().sprites,
+        [id]: sprite,
+      },
     });
   }
 
   public setCurrentFrame(frame: number) {
-    this.currentFrame.next(frame);
+
+    this.calculateNextSpritesParams(frame);
+
+    this._state.next({
+      ...this._state.getValue(),
+      currentFrame: frame,
+    });
+  }
+
+  public calculateNextSpritesParams(frame: number) {
+    const sprites = this.state().sprites;
+    const currentFrame = this.state().currentFrame;
+
+    const nextSpritesParams: Record<string, SpriteFrameState> = {};
+
+    for (const spriteId in sprites) {
+      const sprite = sprites[spriteId];
+      const currentPositionKeyframe = sprite.keyframes.position[currentFrame];
+      const firstPositionKeyframe = sprite.keyframesIndexes.position[0];
+      const lastPositionKeyframe = sprite.keyframesIndexes.position[sprite.keyframesIndexes.position.length - 1];
+
+      let translateVector: [number, number, number] = [sprite.x, sprite.y, sprite.zIndex];
+
+      if (currentPositionKeyframe) {
+        translateVector = [
+          currentPositionKeyframe.x,
+          currentPositionKeyframe.y,
+          sprite.zIndex,
+        ];
+      }
+      //
+      if (lastPositionKeyframe !== undefined && currentFrame > lastPositionKeyframe) {
+        translateVector = [
+          sprite.keyframes.position[lastPositionKeyframe].x,
+          sprite.keyframes.position[lastPositionKeyframe].y,
+          sprite.zIndex,
+        ];
+        // eslint-disable-next-line no-empty
+      } else if (firstPositionKeyframe !== undefined && currentFrame < firstPositionKeyframe) {
+      } else if (!currentPositionKeyframe) {
+        // Probably we are in between two keyframes. We need to interpolate the position
+        // Find the two keyframes that we are in between
+        const kf = sprite.keyframes;
+
+        const previousKeyframe = [...sprite.keyframesIndexes.position].reverse().find((keyframe) => keyframe < currentFrame);
+
+        if (previousKeyframe !== undefined) {
+          const nextKeyframe = kf.position[previousKeyframe].next;
+
+          if (nextKeyframe !== null) {
+            const previousKeyframePosition = kf.position[previousKeyframe];
+            const nextKeyframePosition = kf.position[nextKeyframe];
+
+            const progress = (currentFrame - previousKeyframe) / (nextKeyframe - previousKeyframe);
+
+            // Linear interpolation will do for now. Later we need to implement easing functions, and animation paths
+            // translateVector = [
+            //   previousKeyframePosition.x + (nextKeyframePosition.x - previousKeyframePosition.x) * progress,
+            //   previousKeyframePosition.y + (nextKeyframePosition.y - previousKeyframePosition.y) * progress,
+            //   sprite.zIndex,
+            // ];
+            //
+            // Here is an example of how to implement ease out
+            // const easedProgress = 1 - Math.pow(1 - progress, 2);
+            // translateVector = [
+            //   previousKeyframePosition.x + (nextKeyframePosition.x - previousKeyframePosition.x) * easedProgress,
+            //   previousKeyframePosition.y + (nextKeyframePosition.y - previousKeyframePosition.y) * easedProgress,
+            //   sprite.zIndex,
+            // ];
+
+            // Here is an example of how to implement ease in
+            // const easedProgress = Math.pow(progress, 2);
+            // translateVector = [
+            //   previousKeyframePosition.x + (nextKeyframePosition.x - previousKeyframePosition.x) * easedProgress,
+            //   previousKeyframePosition.y + (nextKeyframePosition.y - previousKeyframePosition.y) * easedProgress,
+            //   sprite.zIndex,
+            // ];
+            //
+            // // Here is an example of how to implement ease in and out
+            const easedProgress = progress < 0.5 ? Math.pow(progress * 2, 2) / 2 : 1 - Math.pow((1 - progress) * 2, 2) / 2;
+            translateVector = [
+              previousKeyframePosition.x + (nextKeyframePosition.x - previousKeyframePosition.x) * easedProgress,
+              previousKeyframePosition.y + (nextKeyframePosition.y - previousKeyframePosition.y) * easedProgress,
+              sprite.zIndex,
+            ];
+          }
+        }
+      }
+
+      nextSpritesParams[spriteId] = {
+        position: translateVector,
+        rotation: 0,
+        scale: [sprite.width, sprite.height],
+        opacity: 1,
+        zIndex: sprite.zIndex,
+      }
+    }
+
+    this.nextSpritesParams.next(nextSpritesParams);
+  }
+
+  public state() {
+    return this._state.getValue();
   }
 }
 

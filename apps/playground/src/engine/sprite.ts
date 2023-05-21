@@ -14,6 +14,14 @@ export type Keyframes = {
   zIndex: Record<number, {zIndex: number} & KeyframeDoublyLinkedList>,
 }
 
+export type SpriteFrameState = {
+  position: [number, number, number];
+  rotation: number;
+  scale: [number, number];
+  opacity: number;
+  zIndex: number;
+}
+
 export class Sprite {
   public texture: WebGLTexture;
   public id: string = crypto.randomUUID();
@@ -78,5 +86,35 @@ export class Sprite {
       });
       image.src = url;
     });
+  }
+
+  static toJSON(sprite: Sprite): Omit<Sprite, 'texture'> {
+    return {
+      id: sprite.id,
+      type: sprite.type,
+      x: sprite.x,
+      y: sprite.y,
+      width: sprite.width,
+      height: sprite.height,
+      zIndex: sprite.zIndex,
+      name: sprite.name,
+      keyframes: sprite.keyframes,
+      keyframesIndexes: sprite.keyframesIndexes,
+    };
+  }
+
+  static fromJSON(gl: WebGLRenderingContext, json: Omit<Sprite, 'texture'>): Sprite {
+    const sprite = new Sprite(gl, new Image());
+    sprite.id = json.id;
+    sprite.type = json.type;
+    sprite.x = json.x;
+    sprite.y = json.y;
+    sprite.width = json.width;
+    sprite.height = json.height;
+    sprite.zIndex = json.zIndex;
+    sprite.name = json.name;
+    sprite.keyframes = json.keyframes;
+    sprite.keyframesIndexes = json.keyframesIndexes;
+    return sprite;
   }
 }

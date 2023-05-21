@@ -1,24 +1,11 @@
-import React, {FC, useMemo} from "react";
+import React, {FC} from "react";
 import {Panel} from "../ui/panel/panel";
-import {sceneStore} from "../../stores/scene.store";
-import {useStoreSubscribe} from "@anima/use-store-subscribe";
 import {Timeline} from "./timeline";
 
 const fps = 30;
 const framesLength = 5 * fps; // 5 seconds
 
-const frames = Array.from({length: framesLength}, (_, i) => i);
-
 export const TimelinePanel: FC = () => {
-
-  const currentFrame = useStoreSubscribe(sceneStore.currentFrame);
-  const selectedSpriteIds = useStoreSubscribe(sceneStore.selectedSpriteIds);
-  const spritesMap = useStoreSubscribe(sceneStore.sprites);
-
-  const sprites = useMemo(() => {
-    return Object.values(spritesMap);
-  }, [spritesMap]);
-
   return (
     <Panel
       style={{

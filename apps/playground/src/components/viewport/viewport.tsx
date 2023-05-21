@@ -31,14 +31,14 @@ export const Viewport: FC<IProps> = () => {
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const sprites = useStoreSubscribe(sceneStore.sprites);
-  const selectedSpriteIds = useStoreSubscribe(sceneStore.selectedSpriteIds);
+  const sceneState = useStoreSubscribe(sceneStore._state);
+  const selectedSpriteIds = sceneState.selectedSpriteIds;
 
-  const selectedSpritesRef = useRef(Object.values(sprites).filter((sprite) => selectedSpriteIds.includes(sprite.id)));
-  selectedSpritesRef.current = Object.values(sprites).filter((sprite) => selectedSpriteIds.includes(sprite.id));
+  const selectedSpritesRef = useRef(Object.values(sceneState.sprites).filter((sprite) => selectedSpriteIds.includes(sprite.id)));
+  selectedSpritesRef.current = Object.values(sceneState.sprites).filter((sprite) => selectedSpriteIds.includes(sprite.id));
 
-  const spritesRef = useRef(Object.values(sprites).sort((a, b) => a.zIndex - b.zIndex));
-  spritesRef.current = Object.values(sprites).sort((a, b) => a.zIndex - b.zIndex);
+  const spritesRef = useRef(Object.values(sceneState.sprites).sort((a, b) => a.zIndex - b.zIndex));
+  spritesRef.current = Object.values(sceneState.sprites).sort((a, b) => a.zIndex - b.zIndex);
 
   const playing = useRef(false);
   const lastPlaying = useRef(false);
@@ -129,7 +129,7 @@ export const Viewport: FC<IProps> = () => {
     twgl.resizeCanvasToDisplaySize(gl.canvas as HTMLCanvasElement, 1 || window.devicePixelRatio);
 
     function render(time: number) {
-      const currentFrame = sceneStore.currentFrame.getValue();
+      const currentFrame = sceneStore.state().currentFrame;
 
       if (playing.current && !lastPlaying.current) {
         startTime.current = time - (currentFrame + 1) * 1000 / fps;
@@ -153,7 +153,7 @@ export const Viewport: FC<IProps> = () => {
 
       twgl.setBuffersAndAttributes(gl, spriteProgram.program, spriteProgram.bufferInfo);
 
-      const scale = sceneStore.scale.getValue();
+      const scale = sceneStore.state().scale;
 
       // viewMatrix is camera position. We want to move the camera in the opposite direction of the model when translating
       let viewMatrix = twgl.m4.translate(twgl.m4.identity(), [0, 0, 0].map(v => -v));
@@ -162,86 +162,23 @@ export const Viewport: FC<IProps> = () => {
 
       gl.useProgram(spriteProgram.program.program);
 
+      /**
+       * Render sprites
+       */
       spritesRef.current.forEach((sprite) => {
         if (!sprite.texture) {
           return;
         }
 
-        const currentPositionKeyframe = sprite.keyframes.position[currentFrame];
-        const firstPositionKeyframe = sprite.keyframesIndexes.position[0];
-        const lastPositionKeyframe = sprite.keyframesIndexes.position[sprite.keyframesIndexes.position.length - 1];
+        const spriteState = sceneStore.nextSpritesParams.getValue()[sprite.id];
 
-        let translateVector: [number, number, number] = [sprite.x, sprite.y, sprite.zIndex];
-
-        if (currentPositionKeyframe) {
-          translateVector = [
-            currentPositionKeyframe.x,
-            currentPositionKeyframe.y,
-            sprite.zIndex,
-          ];
-        }
-        //
-        if (lastPositionKeyframe !== undefined && currentFrame > lastPositionKeyframe) {
-          translateVector = [
-            sprite.keyframes.position[lastPositionKeyframe].x,
-            sprite.keyframes.position[lastPositionKeyframe].y,
-            sprite.zIndex,
-          ];
-          // eslint-disable-next-line no-empty
-        } else if (firstPositionKeyframe !== undefined && currentFrame < firstPositionKeyframe) {
-        } else if (!currentPositionKeyframe) {
-          // Probably we are in between two keyframes. We need to interpolate the position
-          // Find the two keyframes that we are in between
-          const kf = sprite.keyframes;
-
-          const previousKeyframe = [...sprite.keyframesIndexes.position].reverse().find((keyframe) => keyframe < currentFrame);
-
-          if (previousKeyframe !== undefined) {
-            const nextKeyframe = kf.position[previousKeyframe].next;
-
-            if (nextKeyframe !== null) {
-              const previousKeyframePosition = kf.position[previousKeyframe];
-              const nextKeyframePosition = kf.position[nextKeyframe];
-
-              const progress = (currentFrame - previousKeyframe) / (nextKeyframe - previousKeyframe);
-
-              // Linear interpolation will do for now. Later we need to implement easing functions, and animation paths
-              // translateVector = [
-              //   previousKeyframePosition.x + (nextKeyframePosition.x - previousKeyframePosition.x) * progress,
-              //   previousKeyframePosition.y + (nextKeyframePosition.y - previousKeyframePosition.y) * progress,
-              //   sprite.zIndex,
-              // ];
-              //
-              // Here is an example of how to implement ease out
-              // const easedProgress = 1 - Math.pow(1 - progress, 2);
-              // translateVector = [
-              //   previousKeyframePosition.x + (nextKeyframePosition.x - previousKeyframePosition.x) * easedProgress,
-              //   previousKeyframePosition.y + (nextKeyframePosition.y - previousKeyframePosition.y) * easedProgress,
-              //   sprite.zIndex,
-              // ];
-
-              // Here is an example of how to implement ease in
-              // const easedProgress = Math.pow(progress, 2);
-              // translateVector = [
-              //   previousKeyframePosition.x + (nextKeyframePosition.x - previousKeyframePosition.x) * easedProgress,
-              //   previousKeyframePosition.y + (nextKeyframePosition.y - previousKeyframePosition.y) * easedProgress,
-              //   sprite.zIndex,
-              // ];
-              //
-              // // Here is an example of how to implement ease in and out
-              const easedProgress = progress < 0.5 ? Math.pow(progress * 2, 2) / 2 : 1 - Math.pow((1 - progress) * 2, 2) / 2;
-              translateVector = [
-                previousKeyframePosition.x + (nextKeyframePosition.x - previousKeyframePosition.x) * easedProgress,
-                previousKeyframePosition.y + (nextKeyframePosition.y - previousKeyframePosition.y) * easedProgress,
-                sprite.zIndex,
-              ];
-            }
-          }
+        if (!spriteState) {
+          return;
         }
 
         twgl.setUniforms(spriteProgram.program, {
           u_texture: sprite.texture,
-          u_model: twgl.m4.scale(twgl.m4.translate(twgl.m4.identity(), translateVector), [sprite.width, sprite.height, 0]),
+          u_model: twgl.m4.scale(twgl.m4.translate(twgl.m4.identity(), spriteState.position), [sprite.width, sprite.height, 0]),
           u_view: viewMatrix,
           u_projection: projectionMatrix,
         });
@@ -257,7 +194,7 @@ export const Viewport: FC<IProps> = () => {
       gl.useProgram(cameraProgram.program.program);
       twgl.setBuffersAndAttributes(gl, cameraProgram.program, cameraProgram.bufferInfo);
 
-      const camera = sceneStore.camera.getValue();
+      const camera = sceneStore.state().camera;
 
       twgl.setUniforms(cameraProgram.program, {
         u_projection: projectionMatrix,
@@ -272,9 +209,16 @@ export const Viewport: FC<IProps> = () => {
        * Render selected sprites box as a rectangle
        */
       selectedSpritesRef.current.forEach((sprite) => {
+
+        const spriteState = sceneStore.nextSpritesParams.getValue()[sprite.id];
+
+        if (!spriteState) {
+          return;
+        }
+
         twgl.setUniforms(cameraProgram.program, {
           u_projection: projectionMatrix,
-          u_model: twgl.m4.scale(twgl.m4.translate(twgl.m4.identity(), [sprite.x, sprite.y, sprite.zIndex]), [sprite.width, sprite.height, 0]),
+          u_model: twgl.m4.scale(twgl.m4.translate(twgl.m4.identity(), spriteState.position), [sprite.width, sprite.height, 0]),
           u_view: viewMatrix,
           u_color: [0, 0, 1, 1],
         });

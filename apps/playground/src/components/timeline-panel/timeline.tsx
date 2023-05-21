@@ -16,13 +16,10 @@ export const Timeline = () => {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    console.log(x, y);
-
-    // Frame width is 12px
     const frame = Math.floor(x / 12);
-    console.log(frame + 1);
+    console.log(frame);
 
-    sceneStore.setCurrentFrame(frame + 1);
+    sceneStore.setCurrentFrame(frame);
   }
 
   useLayoutEffect(() => {
@@ -55,9 +52,6 @@ export const Timeline = () => {
 
     twgl.setBuffersAndAttributes(gl, programInfo, bufferInfo);
 
-    gl.useProgram(programInfo.program);
-
-
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
     console.log(gl.canvas.width, gl.canvas.height)
@@ -74,6 +68,8 @@ export const Timeline = () => {
       const blockWidthInPixels = 12;
       const blockHeightInPixels = 24;
 
+      gl.useProgram(programInfo.program);
+
       twgl.setUniforms(programInfo, {
         u_resolution: [gl.canvas.width, gl.canvas.height],
         u_gridSize: [blockWidthInPixels, blockHeightInPixels],
@@ -84,7 +80,7 @@ export const Timeline = () => {
         u_rows: 10,
         u_columns: framesLength,
 
-        u_selectedColumn: sceneStore.currentFrame.getValue() - 1,
+        u_selectedColumn: sceneStore.state().currentFrame,
 
         u_model: twgl.m4.translate(twgl.m4.identity(), [0, 0, 0]),
       });
@@ -104,7 +100,7 @@ export const Timeline = () => {
     }}>
       <canvas
         ref={canvasRef}
-        onClick={setActiveFrame}
+        onPointerDown={setActiveFrame}
       />
     </div>
   )

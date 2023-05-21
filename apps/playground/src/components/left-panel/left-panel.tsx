@@ -4,10 +4,10 @@ import {sceneStore} from "../../stores/scene.store";
 import {useStoreSubscribe} from "@anima/use-store-subscribe";
 
 export const LeftPanel: FC = () => {
-  const sprites = useStoreSubscribe(sceneStore.sprites);
-  const selectedSpriteIds = useStoreSubscribe(sceneStore.selectedSpriteIds);
+  const sceneState = useStoreSubscribe(sceneStore._state);
+  const selectedSpriteIds = sceneState.selectedSpriteIds;
 
-  const spritesArray = useMemo(() => Object.values(sprites), [sprites]);
+  const spritesArray = useMemo(() => Object.values(sceneState.sprites), [sceneState.sprites]);
 
   const selectSprite = (spriteId: string) => {
     sceneStore.setSelectedSpriteId(spriteId);
