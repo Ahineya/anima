@@ -4,6 +4,7 @@ import {useStoreSubscribe} from "@anima/use-store-subscribe";
 import {sceneStore} from "../../stores/scene.store";
 import {programs} from "../../engine/programs";
 import {useKeybinding} from "../../hooks/use-keybinding.hook";
+import {sortByOrder} from "../../helpers/sort-by-order.helper";
 
 const fps = 30;
 const framesLength = 5 * fps;
@@ -36,9 +37,6 @@ export const Viewport: FC<IProps> = () => {
 
   const selectedSpritesRef = useRef(Object.values(sceneState.sprites).filter((sprite) => selectedSpriteIds.includes(sprite.id)));
   selectedSpritesRef.current = Object.values(sceneState.sprites).filter((sprite) => selectedSpriteIds.includes(sprite.id));
-
-  const spritesRef = useRef(Object.values(sceneState.sprites).sort((a, b) => a.zIndex - b.zIndex));
-  spritesRef.current = Object.values(sceneState.sprites).sort((a, b) => a.zIndex - b.zIndex);
 
   const deltaStartTime = useRef(0);
   const startTime = useRef(0);
@@ -81,7 +79,7 @@ export const Viewport: FC<IProps> = () => {
       });
 
       // Clean up textures for all objects
-      spritesRef.current.forEach((sprite) => {
+      sceneStore.state().sortedSprites.forEach((sprite) => {
         if (sprite.texture) {
           gl.deleteTexture(sprite.texture);
         }
@@ -164,7 +162,7 @@ export const Viewport: FC<IProps> = () => {
       /**
        * Render sprites
        */
-      spritesRef.current.forEach((sprite) => {
+      sceneStore.state().sortedSprites.forEach((sprite, i) => {
         if (!sprite.texture) {
           return;
         }
@@ -175,9 +173,11 @@ export const Viewport: FC<IProps> = () => {
           return;
         }
 
+        const [x, y] = spriteState.position;
+
         twgl.setUniforms(spriteProgram.program, {
           u_texture: sprite.texture,
-          u_model: twgl.m4.scale(twgl.m4.translate(twgl.m4.identity(), spriteState.position), [sprite.width, sprite.height, 0]),
+          u_model: twgl.m4.scale(twgl.m4.translate(twgl.m4.identity(), [x, y, i * 0.0001]), [sprite.width, sprite.height, 0]),
           u_view: viewMatrix,
           u_projection: projectionMatrix,
         });

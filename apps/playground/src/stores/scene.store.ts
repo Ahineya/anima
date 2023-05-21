@@ -2,6 +2,7 @@ import {StoreSubject} from "@anima/store-subject";
 import {Sprite, SpriteFrameState} from "../engine/sprite";
 import * as twgl from "twgl.js";
 import {RenderType} from "../engine/renderType";
+import {sortByOrder} from "../helpers/sort-by-order.helper";
 
 type RenderProgram = {
   name: string;
@@ -21,6 +22,7 @@ type SceneState = {
   camera: CameraState;
   scale: number; // Global scene scale
   sprites: Record<string, Sprite>; // Sprite id -> Sprite
+  sortedSprites: Sprite[]; // Sorted sprites
   selectedSpriteIds: string[];
   currentFrame: number;
 }
@@ -38,6 +40,7 @@ class SceneStore {
     },
     scale: 1,
     sprites: {},
+    sortedSprites: [],
     currentFrame: 0,
     selectedSpriteIds: [],
   });
@@ -120,12 +123,15 @@ class SceneStore {
   }
 
   public addSprite(sprite: Sprite) {
+    const newSprites = {
+      ...this._state.getValue().sprites,
+      [sprite.id]: sprite,
+    };
+
     this._state.next({
       ...this._state.getValue(),
-      sprites: {
-        ...this._state.getValue().sprites,
-        [sprite.id]: sprite,
-      },
+      sprites: newSprites,
+      sortedSprites: Object.values(newSprites).sort(sortByOrder),
     });
 
     this.setSelectedSpriteId(sprite.id);
@@ -212,13 +218,13 @@ class SceneStore {
       const firstPositionKeyframe = sprite.keyframesIndexes.position[0];
       const lastPositionKeyframe = sprite.keyframesIndexes.position[sprite.keyframesIndexes.position.length - 1];
 
-      let translateVector: [number, number, number] = [sprite.x, sprite.y, sprite.zIndex];
+      let translateVector: [number, number, number] = [sprite.x, sprite.y, 0];
 
       if (currentPositionKeyframe) {
         translateVector = [
           currentPositionKeyframe.x,
           currentPositionKeyframe.y,
-          sprite.zIndex,
+          0
         ];
       }
       //
@@ -226,7 +232,7 @@ class SceneStore {
         translateVector = [
           sprite.keyframes.position[lastPositionKeyframe].x,
           sprite.keyframes.position[lastPositionKeyframe].y,
-          sprite.zIndex,
+          0
         ];
         // eslint-disable-next-line no-empty
       } else if (firstPositionKeyframe !== undefined && currentFrame < firstPositionKeyframe) {
@@ -274,7 +280,7 @@ class SceneStore {
             translateVector = [
               previousKeyframePosition.x + (nextKeyframePosition.x - previousKeyframePosition.x) * easedProgress,
               previousKeyframePosition.y + (nextKeyframePosition.y - previousKeyframePosition.y) * easedProgress,
-              sprite.zIndex,
+              0,
             ];
           }
         }
@@ -285,7 +291,6 @@ class SceneStore {
         rotation: 0,
         scale: [sprite.width, sprite.height],
         opacity: 1,
-        zIndex: sprite.zIndex,
       }
     }
 

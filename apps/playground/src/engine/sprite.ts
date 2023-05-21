@@ -1,4 +1,5 @@
 import * as twgl from "twgl.js";
+import {generateKeyBetween} from "fractional-indexing";
 
 export type KeyframeDoublyLinkedList = {
   frame: number,
@@ -11,7 +12,6 @@ export type Keyframes = {
   rotation: Record<number, {angle: number} & KeyframeDoublyLinkedList>,
   scale: Record<number, {scale: number} & KeyframeDoublyLinkedList>,
   opacity: Record<number, {opacity: number} & KeyframeDoublyLinkedList>,
-  zIndex: Record<number, {zIndex: number} & KeyframeDoublyLinkedList>,
 }
 
 export type SpriteFrameState = {
@@ -19,7 +19,6 @@ export type SpriteFrameState = {
   rotation: number;
   scale: [number, number];
   opacity: number;
-  zIndex: number;
 }
 
 export class Sprite {
@@ -31,15 +30,14 @@ export class Sprite {
   public width = 0;
   public height = 0;
   public parentAndOrder?: string; // In format parentId:order. Fractional ordering in 63-base system
-  public zIndex = 0;
   public name = 'New sprite';
+  public order: string = generateKeyBetween(null, null);
 
   public keyframes: Keyframes = {
     position: {},
     rotation: {},
     scale: {},
     opacity: {},
-    zIndex: {},
   };
 
   public keyframesIndexes: Record<keyof Keyframes, number[]> = {
@@ -47,7 +45,6 @@ export class Sprite {
     rotation: [],
     scale: [],
     opacity: [],
-    zIndex: [],
   }
 
   constructor(private gl: WebGLRenderingContext, private image: HTMLImageElement) {
@@ -66,7 +63,7 @@ export class Sprite {
     });
   }
 
-  static async create(gl: WebGLRenderingContext, url: string, {x, y, width, height, name, z}: {x?: number, y?: number, name?: string, width?: number, height?: number, z?: number} = {
+  static async create(gl: WebGLRenderingContext, url: string, {x, y, width, height, name, z, order}: {x?: number, y?: number, name?: string, width?: number, height?: number, z?: number, order?: string} = {
     x: 0,
     y: 0,
     name: 'New sprite',
@@ -77,10 +74,10 @@ export class Sprite {
         const sprite = new Sprite(gl, image);
         sprite.x = x || 0;
         sprite.y = y || 0;
-        sprite.zIndex = z || 0;
         sprite.width = width || image.width;
         sprite.height = height || image.height;
         sprite.name = name || 'New sprite';
+        sprite.order = order || generateKeyBetween(null, null);
 
         resolve(sprite);
       });
@@ -96,10 +93,10 @@ export class Sprite {
       y: sprite.y,
       width: sprite.width,
       height: sprite.height,
-      zIndex: sprite.zIndex,
       name: sprite.name,
       keyframes: sprite.keyframes,
       keyframesIndexes: sprite.keyframesIndexes,
+      order: sprite.order,
     };
   }
 
@@ -111,7 +108,6 @@ export class Sprite {
     sprite.y = json.y;
     sprite.width = json.width;
     sprite.height = json.height;
-    sprite.zIndex = json.zIndex;
     sprite.name = json.name;
     sprite.keyframes = json.keyframes;
     sprite.keyframesIndexes = json.keyframesIndexes;

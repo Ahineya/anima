@@ -1,6 +1,5 @@
 import './app.scss';
 import {useStoreSubscribe} from "@anima/use-store-subscribe";
-import {playgroundStore} from "../stores/playground.store";
 import {Panel} from "../components/ui/panel/panel";
 import {Viewport} from "../components/viewport/viewport";
 import {sceneStore} from "../stores/scene.store";
@@ -11,6 +10,9 @@ import myImage2 from "../assets/i2.png";
 import {LeftPanel} from "../components/left-panel/left-panel";
 import {RightPanel} from "../components/right-panel/right-panel";
 import {TimelinePanel} from "../components/timeline-panel/timeline-panel";
+import {generateKeyBetween} from "fractional-indexing";
+import {sortByOrder} from "../helpers/sort-by-order.helper";
+
 
 export function App() {
 
@@ -23,18 +25,23 @@ export function App() {
     }
 
     (async () => {
+      const firstSpriteOrder = generateKeyBetween(null, null);
+      const secondSpriteOrder = generateKeyBetween(firstSpriteOrder, null);
+
       const sprites = await Promise.all([
         Sprite.create(gl, myImage, {
           x: 0,
           y: 0,
           name: "Asmodeus",
+          order: firstSpriteOrder,
         }),
 
         Sprite.create(gl, myImage2, {
           x: 512,
           y: -512,
           name: "Queenking",
-          z: 0.001
+          z: 0.001,
+          order: secondSpriteOrder,
         })
       ]);
 
@@ -101,11 +108,17 @@ export function App() {
         return Math.max(max, sprite.zIndex);
       }, 0);
 
+      const orderedSprites = Object.values(state.sprites).sort(sortByOrder);
+      const lastSprite = orderedSprites[orderedSprites.length - 1];
+
+      const order = generateKeyBetween(lastSprite?.order, null);
+
       const sprite = await Sprite.create(gl, src, {
         x: 0,
         y: 0,
         name: "New Sprite",
-        z: maxZ + 0.001
+        z: maxZ + 0.001,
+        order,
       })
 
       sceneStore.addSprite(sprite);
