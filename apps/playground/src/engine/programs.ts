@@ -27,7 +27,7 @@ void main() {
 `;
 
 const spriteFragmentShaderSource = `#version 300 es
-precision mediump float;
+precision highp float;
 
 uniform sampler2D u_texture;
 
@@ -145,10 +145,10 @@ export const programs: Program[] = [
       a_position: {
         numComponents: 3,
         data: [
-          -0.5, -0.5, 0.0,
-          -0.5, 0.5, 0.0,
-          0.5, -0.5, 0.0,
-          0.5, 0.5, 0.0,
+          -1, -1, 0.0,
+          -1, 1, 0.0,
+          1, -1, 0.0,
+          1, 1, 0.0,
         ],
       },
       a_texCoord: {
@@ -172,10 +172,10 @@ export const programs: Program[] = [
       a_position: {
         numComponents: 3,
         data: [
-          -0.5, -0.5, 0.0,
-          -0.5, 0.5, 0.0,
-          0.5, -0.5, 0.0,
-          0.5, 0.5, 0.0,
+          -1, -1, 0.0,
+          -1, 1, 0.0,
+          1, -1, 0.0,
+          1, 1, 0.0,
         ],
       },
       indices: [0, 1, 1, 3, 3, 2, 2, 0],

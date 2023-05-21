@@ -1,21 +1,24 @@
 import React, {FC, useLayoutEffect, useRef} from 'react';
 import * as twgl from 'twgl.js';
-import {useStoreSubscribe} from "@anima/use-store-subscribe";
 import {sceneStore} from "../../stores/scene.store";
 import {programs} from "../../engine/programs";
 import {useKeybinding} from "../../hooks/use-keybinding.hook";
-import {sortByOrder} from "../../helpers/sort-by-order.helper";
 
 const fps = 30;
 const framesLength = 5 * fps;
 
 function createOrthographicProjectionMatrix(width: number, height: number) {
+
   const aspectRatio = width / height;
 
-  const left = -aspectRatio * width / 2;
-  const right = aspectRatio * width / 2;
-  const top = 1 * width / 2;
-  const bottom = -1 * width / 2;
+  console.log(aspectRatio, width, height);
+
+  const resizeFactor = 2 * window.devicePixelRatio;
+
+  const left = -width / 2;
+  const right = width / 2;
+  const top = height / 2;
+  const bottom = -height / 2;
   const near = -1;
   const far = 1;
 
@@ -100,11 +103,15 @@ export const Viewport: FC<IProps> = () => {
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-    // Resize canvas to match parent container size
-    canvas.width = canvas.parentElement?.clientWidth || 0;
-    canvas.height = canvas.parentElement?.clientHeight || 0;
+    console.log(canvas.parentElement);
 
-    const projectionMatrix = createOrthographicProjectionMatrix(canvas.width, canvas.height);
+    const canvasContainer = canvas.parentElement!;
+
+    canvas.width = canvasContainer.clientWidth * window.devicePixelRatio;
+    canvas.height = canvasContainer.clientHeight * window.devicePixelRatio;
+
+    canvas.style.width = `${canvasContainer.clientWidth}px`;
+    canvas.style.height = `${canvasContainer.clientHeight}px`;
 
     const spriteProgram = sceneStore.programs.get('sprite');
     const cameraProgram = sceneStore.programs.get('camera');
@@ -114,7 +121,8 @@ export const Viewport: FC<IProps> = () => {
     }
 
     let animationFrameId: number;
-    twgl.resizeCanvasToDisplaySize(gl.canvas as HTMLCanvasElement, 1 || window.devicePixelRatio);
+
+    const projectionMatrix = createOrthographicProjectionMatrix(gl.canvas.width, gl.canvas.height);
 
     function render(time: number) {
       const currentFrame = sceneStore.state().currentFrame;
@@ -171,7 +179,7 @@ export const Viewport: FC<IProps> = () => {
 
         twgl.setUniforms(spriteProgram.program, {
           u_texture: sprite.texture,
-          u_model: twgl.m4.scale(twgl.m4.translate(twgl.m4.identity(), [x, y, i * 0.0001]), [sprite.width, sprite.height, 0]),
+          u_model: twgl.m4.scale(twgl.m4.translate(twgl.m4.identity(), [x * devicePixelRatio, y * devicePixelRatio, i * 0.0001]), [sprite.width, sprite.height, 0]),
           u_view: viewMatrix,
           u_projection: projectionMatrix,
         });
@@ -191,16 +199,28 @@ export const Viewport: FC<IProps> = () => {
 
       twgl.setUniforms(cameraProgram.program, {
         u_projection: projectionMatrix,
-        u_model: twgl.m4.scale(twgl.m4.translate(twgl.m4.identity(), [camera.x, camera.y, 0]), [camera.width, camera.height, 0]),
+        u_model: twgl.m4.scale(twgl.m4.translate(twgl.m4.identity(), [camera.x * devicePixelRatio, camera.y * devicePixelRatio, 0]), [camera.width, camera.height, 0]),
         u_view: viewMatrix,
         u_color: [0, 1, 0, 1],
       });
 
       twgl.drawBufferInfo(gl, cameraProgram.bufferInfo, cameraProgram.renderType);
 
+      if (devicePixelRatio > 1) {
+        twgl.setUniforms(cameraProgram.program, {
+          u_projection: projectionMatrix,
+          u_model: twgl.m4.scale(twgl.m4.translate(twgl.m4.identity(), [camera.x * devicePixelRatio + 1, camera.y * devicePixelRatio + 1, 0]), [camera.width - 2, camera.height - 2, 0]),
+          u_view: viewMatrix,
+          u_color: [0, 1, 0, 1],
+        });
+
+        twgl.drawBufferInfo(gl, cameraProgram.bufferInfo, cameraProgram.renderType);
+      }
+
       /**
        * Render selected sprites box as a rectangle
        */
+
       sceneStore.state().sortedSprites.forEach((sprite) => {
 
         if (!sceneStore.state().selectedSpriteIds.includes(sprite.id)) {
@@ -213,15 +233,30 @@ export const Viewport: FC<IProps> = () => {
           return;
         }
 
+        const [x, y, z] = spriteState.position;
+
         twgl.setUniforms(cameraProgram.program, {
           u_projection: projectionMatrix,
-          u_model: twgl.m4.scale(twgl.m4.translate(twgl.m4.identity(), spriteState.position), [sprite.width, sprite.height, 0]),
+          u_model: twgl.m4.scale(twgl.m4.translate(twgl.m4.identity(), [x * devicePixelRatio, y * devicePixelRatio, z]), [sprite.width, sprite.height, 0]),
           u_view: viewMatrix,
           u_color: [0, 0, 1, 1],
         });
 
         twgl.drawBufferInfo(gl, cameraProgram.bufferInfo, cameraProgram.renderType);
+
+        if (devicePixelRatio > 1) {
+          twgl.setUniforms(cameraProgram.program, {
+            u_projection: projectionMatrix,
+            u_model: twgl.m4.scale(twgl.m4.translate(twgl.m4.identity(), [x * devicePixelRatio + 1, y * devicePixelRatio + 1, z]), [sprite.width - 2, sprite.height - 2, 0]),
+            u_view: viewMatrix,
+            u_color: [0, 0, 1, 1],
+          });
+
+          twgl.drawBufferInfo(gl, cameraProgram.bufferInfo, cameraProgram.renderType);
+        }
       });
+
+      gl.lineWidth(1);
 
       /**
        * Increment frame if playing. Get current frame based on time and fps. Always start from 0
