@@ -4,7 +4,7 @@ import {playgroundStore} from "../stores/playground.store";
 import {Panel} from "../components/ui/panel/panel";
 import {Viewport} from "../components/viewport/viewport";
 import {sceneStore} from "../stores/scene.store";
-import {useEffect} from "react";
+import React, {useEffect} from "react";
 import {Sprite} from "../engine/sprite";
 import myImage from "../assets/i.png";
 import myImage2 from "../assets/i2.png";
@@ -15,6 +15,7 @@ import {TimelinePanel} from "../components/timeline-panel/timeline-panel";
 export function App() {
 
   const gl = useStoreSubscribe(sceneStore.gl);
+  const state = useStoreSubscribe(sceneStore._state);
 
   useEffect(() => {
     if (!gl) {
@@ -79,8 +80,42 @@ export function App() {
     }
   }, [gl]);
 
+  const onAddImage = (e: React.DragEvent) => {
+    e.preventDefault();
+
+    if (!gl) {
+      return;
+    }
+
+    // If the user drags something that is not an image, we don't want to do anything.
+    if (!e.dataTransfer.files[0].type.startsWith('image/')) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const src = e.target!.result as string;
+
+      // Get max z
+      const maxZ = Object.values(state.sprites).reduce((max, sprite) => {
+        return Math.max(max, sprite.zIndex);
+      }, 0);
+
+      const sprite = await Sprite.create(gl, src, {
+        x: 0,
+        y: 0,
+        name: "New Sprite",
+        z: maxZ + 0.001
+      })
+
+      sceneStore.addSprite(sprite);
+    }
+
+    reader.readAsDataURL(e.dataTransfer.files[0]);
+  }
+
   return (
-    <Panel direction="column">
+    <Panel direction="column" onDrop={onAddImage} onDragOver={e => e.preventDefault()}>
       <Panel direction="row">
         <LeftPanel/>
         <Panel>

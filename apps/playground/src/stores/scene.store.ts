@@ -168,6 +168,8 @@ class SceneStore {
         [id]: sprite,
       },
     });
+
+    this.calculateNextSpritesParams(this.state().currentFrame);
   }
 
   public setSpriteSize(id: string, width: number, height: number) {
@@ -187,6 +189,8 @@ class SceneStore {
         [id]: sprite,
       },
     });
+
+    this.calculateNextSpritesParams(this.state().currentFrame);
   }
 
   public setCurrentFrame(frame: number) {
