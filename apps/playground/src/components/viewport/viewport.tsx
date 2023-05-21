@@ -231,7 +231,13 @@ export const Viewport: FC<IProps> = () => {
        */
       if (playing.current) {
         const frame = Math.floor((deltaStartTime.current) / (1000 / fps)) % framesLength;
-        sceneStore.setCurrentFrame(frame);
+
+        // If frame is the same as the current frame, don't update it
+        // TODO: Double buffering please
+        if (frame !== currentFrame) {
+          sceneStore.calculateNextSpritesParams(frame);
+          sceneStore.setCurrentFrame(frame);
+        }
       }
 
       animationFrameId = requestAnimationFrame(render);

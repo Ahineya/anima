@@ -19,6 +19,7 @@ export const Timeline = () => {
     const frame = Math.floor(x / 12);
     console.log(frame);
 
+    sceneStore.calculateNextSpritesParams(frame);
     sceneStore.setCurrentFrame(frame);
   }
 

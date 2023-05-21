@@ -43,6 +43,7 @@ class SceneStore {
   });
 
   public nextSpritesParams = new StoreSubject<Record<string, SpriteFrameState>>({});
+  public nextSpritesScheduledIndex = new StoreSubject<number>(0);
 
   public setGl(gl: WebGLRenderingContext) {
     this.gl.next(gl);
@@ -159,9 +160,6 @@ class SceneStore {
   }
 
   public setCurrentFrame(frame: number) {
-
-    this.calculateNextSpritesParams(frame);
-
     this._state.next({
       ...this._state.getValue(),
       currentFrame: frame,
@@ -170,7 +168,7 @@ class SceneStore {
 
   public calculateNextSpritesParams(frame: number) {
     const sprites = this.state().sprites;
-    const currentFrame = this.state().currentFrame;
+    const currentFrame = frame;
 
     const nextSpritesParams: Record<string, SpriteFrameState> = {};
 
@@ -258,6 +256,7 @@ class SceneStore {
     }
 
     this.nextSpritesParams.next(nextSpritesParams);
+    this.nextSpritesScheduledIndex.next(frame);
   }
 
   public state() {
