@@ -40,15 +40,11 @@ export const Viewport: FC<IProps> = () => {
   const spritesRef = useRef(Object.values(sceneState.sprites).sort((a, b) => a.zIndex - b.zIndex));
   spritesRef.current = Object.values(sceneState.sprites).sort((a, b) => a.zIndex - b.zIndex);
 
-  const playing = useRef(false);
-  const lastPlaying = useRef(false);
-
   const deltaStartTime = useRef(0);
   const startTime = useRef(0);
 
   useKeybinding(' ', () => {
-    lastPlaying.current = playing.current;
-    playing.current = !playing.current;
+    sceneStore.setIsPlaying(!sceneStore.isPlaying.getValue());
   });
 
   useLayoutEffect(() => {
@@ -131,12 +127,15 @@ export const Viewport: FC<IProps> = () => {
     function render(time: number) {
       const currentFrame = sceneStore.state().currentFrame;
 
-      if (playing.current && !lastPlaying.current) {
+      const playing = sceneStore.isPlaying.getValue();
+      const lastPlaying = sceneStore.lastIsPlaying.getValue();
+
+      if (playing && !lastPlaying) {
         startTime.current = time - (currentFrame + 1) * 1000 / fps;
-        lastPlaying.current = true;
+        sceneStore.setLastIsPlaying(true);
       }
 
-      if (playing.current) {
+      if (playing) {
         deltaStartTime.current = time - startTime.current;
       }
 
@@ -229,7 +228,7 @@ export const Viewport: FC<IProps> = () => {
       /**
        * Increment frame if playing. Get current frame based on time and fps. Always start from 0
        */
-      if (playing.current) {
+      if (playing) {
         const frame = Math.floor((deltaStartTime.current) / (1000 / fps)) % framesLength;
 
         // If frame is the same as the current frame, don't update it

@@ -46,7 +46,10 @@ export const RightPanel: FC = () => {
                   {sprite.id}
                 </div>
                 <div>
-                  {sprite.name}
+                  <input
+                    value={sprite.name}
+                    onChange={(e) => sceneStore.setSpriteName(sprite.id, e.target.value)}
+                  />
                 </div>
                 <div>
                   x:

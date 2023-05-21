@@ -42,11 +42,23 @@ class SceneStore {
     selectedSpriteIds: [],
   });
 
+  public isPlaying = new StoreSubject<boolean>(false);
+  public lastIsPlaying = new StoreSubject<boolean>(false);
+
   public nextSpritesParams = new StoreSubject<Record<string, SpriteFrameState>>({});
   public nextSpritesScheduledIndex = new StoreSubject<number>(0);
 
   public setGl(gl: WebGLRenderingContext) {
     this.gl.next(gl);
+  }
+
+  public setIsPlaying(isPlaying: boolean) {
+    this.lastIsPlaying.next(this.isPlaying.getValue());
+    this.isPlaying.next(isPlaying);
+  }
+
+  public setLastIsPlaying(isPlaying: boolean) {
+    this.lastIsPlaying.next(isPlaying);
   }
 
   public setSelectedSpriteId(id: string) {
@@ -119,6 +131,24 @@ class SceneStore {
     this.setSelectedSpriteId(sprite.id);
 
     this.calculateNextSpritesParams(this.state().currentFrame);
+  }
+
+  public setSpriteName(id: string, name: string) {
+    const sprite = this._state.getValue().sprites[id];
+
+    if (!sprite) {
+      return;
+    }
+
+    sprite.name = name;
+
+    this._state.next({
+      ...this._state.getValue(),
+      sprites: {
+        ...this._state.getValue().sprites,
+        [id]: sprite,
+      },
+    });
   }
 
   public setSpritePosition(id: string, x: number, y: number) {

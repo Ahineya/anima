@@ -17,7 +17,8 @@ export const Timeline = () => {
     const y = e.clientY - rect.top;
 
     const frame = Math.floor(x / 12);
-    console.log(frame);
+
+    sceneStore.setIsPlaying(false);
 
     sceneStore.calculateNextSpritesParams(frame);
     sceneStore.setCurrentFrame(frame);
