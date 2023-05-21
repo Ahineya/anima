@@ -32,12 +32,6 @@ export const Viewport: FC<IProps> = () => {
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const sceneState = useStoreSubscribe(sceneStore._state);
-  const selectedSpriteIds = sceneState.selectedSpriteIds;
-
-  const selectedSpritesRef = useRef(Object.values(sceneState.sprites).filter((sprite) => selectedSpriteIds.includes(sprite.id)));
-  selectedSpritesRef.current = Object.values(sceneState.sprites).filter((sprite) => selectedSpriteIds.includes(sprite.id));
-
   const deltaStartTime = useRef(0);
   const startTime = useRef(0);
 
@@ -207,7 +201,11 @@ export const Viewport: FC<IProps> = () => {
       /**
        * Render selected sprites box as a rectangle
        */
-      selectedSpritesRef.current.forEach((sprite) => {
+      sceneStore.state().sortedSprites.forEach((sprite) => {
+
+        if (!sceneStore.state().selectedSpriteIds.includes(sprite.id)) {
+          return;
+        }
 
         const spriteState = sceneStore.nextSpritesParams.getValue()[sprite.id];
 

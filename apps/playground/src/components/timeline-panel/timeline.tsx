@@ -61,8 +61,13 @@ export const Timeline = () => {
 
     function render() {
       if (!gl) {
+        requestAnimationFrame(render);
         return;
       }
+
+      const rowsCount = sceneStore.state().sortedSprites.reduce((acc, sprite) => {
+        return acc + Object.keys(sprite.keyframes).length;
+      }, 0);
 
       gl.clearColor(57 / 255, 56 / 255, 58 / 255, 1);
       gl.clear(gl.COLOR_BUFFER_BIT);
@@ -79,7 +84,7 @@ export const Timeline = () => {
 
         u_ratio: devicePixelRatio,
 
-        u_rows: 10,
+        u_rows: rowsCount,
         u_columns: framesLength,
 
         u_selectedColumn: sceneStore.state().currentFrame,

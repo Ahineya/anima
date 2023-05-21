@@ -17,7 +17,6 @@ import {sortByOrder} from "../helpers/sort-by-order.helper";
 export function App() {
 
   const gl = useStoreSubscribe(sceneStore.gl);
-  const state = useStoreSubscribe(sceneStore._state);
 
   useEffect(() => {
     if (!gl) {
@@ -103,13 +102,7 @@ export function App() {
     reader.onload = async (e) => {
       const src = e.target!.result as string;
 
-      // Get max z
-      const maxZ = Object.values(state.sprites).reduce((max, sprite) => {
-        return Math.max(max, sprite.zIndex);
-      }, 0);
-
-      const orderedSprites = Object.values(state.sprites).sort(sortByOrder);
-      const lastSprite = orderedSprites[orderedSprites.length - 1];
+      const lastSprite = sceneStore.state().sortedSprites[sceneStore.state().sortedSprites.length - 1];
 
       const order = generateKeyBetween(lastSprite?.order, null);
 
@@ -117,7 +110,6 @@ export function App() {
         x: 0,
         y: 0,
         name: "New Sprite",
-        z: maxZ + 0.001,
         order,
       })
 
