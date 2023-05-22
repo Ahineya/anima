@@ -6,17 +6,36 @@ import {sceneStore} from "../../stores/scene.store";
 const fps = 30;
 const framesLength = 5 * fps;
 
+const rot45 = (Math.PI / 180) * 45;
+
 export const Timeline = () => {
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const setActiveFrame = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const setActiveFrame = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    e.preventDefault();
     // Get canvas element relative position
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
+    if (x < 0 || y < 0) {
+      return;
+    }
+
     const frame = Math.floor(x / 12);
+    const row = Math.floor(y / 24);
+
+    const rowsCount = sceneStore.state().sortedSprites.reduce((acc, sprite) => {
+      return acc + Object.keys(sprite.keyframes).length;
+    }, 0);
+
+    if (row > rowsCount -1) {
+      return;
+    }
+
+    console.log(frame, row);
 
     sceneStore.setIsPlaying(false);
 
@@ -49,15 +68,21 @@ export const Timeline = () => {
 
     const timelineGridProgram = programs.find(program => program.name === 'timeline-grid')!;
 
-    const programInfo = twgl.createProgramInfo(gl, [timelineGridProgram.vertexShaderSource, timelineGridProgram.fragmentShaderSource]);
-    const bufferInfo = twgl.createBufferInfoFromArrays(gl, timelineGridProgram.bufferInfoArrays);
+    const timelineGridProgramInfo = twgl.createProgramInfo(gl, [timelineGridProgram.vertexShaderSource, timelineGridProgram.fragmentShaderSource]);
+    const timelineGridBufferInfo = twgl.createBufferInfoFromArrays(gl, timelineGridProgram.bufferInfoArrays);
 
-    twgl.setBuffersAndAttributes(gl, programInfo, bufferInfo);
+    const keyframeProgram = programs.find(program => program.name === 'timeline-keyframe')!;
+
+    const keyframeProgramInfo = twgl.createProgramInfo(gl, [keyframeProgram.vertexShaderSource, keyframeProgram.fragmentShaderSource]);
+    const keyframeBufferInfo = twgl.createBufferInfoFromArrays(gl, keyframeProgram.bufferInfoArrays);
+
+    twgl.setBuffersAndAttributes(gl, timelineGridProgramInfo, timelineGridBufferInfo);
+    twgl.setBuffersAndAttributes(gl, keyframeProgramInfo, keyframeBufferInfo);
+
 
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
     console.log(gl.canvas.width, gl.canvas.height)
-
 
     function render() {
       if (!gl) {
@@ -75,9 +100,9 @@ export const Timeline = () => {
       const blockWidthInPixels = 12;
       const blockHeightInPixels = 24;
 
-      gl.useProgram(programInfo.program);
+      gl.useProgram(timelineGridProgramInfo.program);
 
-      twgl.setUniforms(programInfo, {
+      twgl.setUniforms(timelineGridProgramInfo, {
         u_resolution: [gl.canvas.width, gl.canvas.height],
         u_gridSize: [blockWidthInPixels, blockHeightInPixels],
         u_color: [70 / 255, 66 / 255, 70 / 255, 1],
@@ -92,7 +117,39 @@ export const Timeline = () => {
         u_model: twgl.m4.translate(twgl.m4.identity(), [0, 0, 0]),
       });
 
-      twgl.drawBufferInfo(gl, bufferInfo);
+      twgl.drawBufferInfo(gl, timelineGridBufferInfo);
+
+      gl.useProgram(keyframeProgramInfo.program);
+
+      // TODO: This catastrophe should use instancing
+      sceneStore.state().sortedSprites.forEach((sprite, spriteIndex) => {
+        if (!Object.keys(sprite.keyframes.position).length) {
+          return;
+        }
+
+        const scaleX = 1 / (gl.canvas.width / 2 * devicePixelRatio);
+        const scaleY = 1 / (gl.canvas.height / 2 * devicePixelRatio);
+
+        const initialXOffset = scaleX * 24;
+        const oneFrameXOffset = scaleX * 48;
+
+        Object.values(sprite.keyframes.position).forEach((keyframe, keyframeIndex) => {
+          const initialYOffset = -scaleY * 48;
+          const oneFrameYOffset = (-scaleY * 96);
+
+          const translatedPx = twgl.m4.translate(twgl.m4.identity(), [initialXOffset + oneFrameXOffset * keyframe.frame, initialYOffset + (oneFrameYOffset * spriteIndex), 0]);
+          const translated = twgl.m4.translate(translatedPx, [-1, 1, 0]);
+          const scaled = twgl.m4.scale(translated, [scaleX * 12, scaleY * 12, 0]);
+          const rotated = twgl.m4.rotateZ(scaled, rot45);
+
+          twgl.setUniforms(keyframeProgramInfo, {
+            u_color: [0xAD / 255, 0xA8 / 255, 0xAD / 255, 1],
+            u_model: rotated,
+          });
+
+          twgl.drawBufferInfo(gl, timelineGridBufferInfo);
+        });
+      });
 
       requestAnimationFrame(render);
     }
@@ -106,10 +163,12 @@ export const Timeline = () => {
       height: '320px',
       width: '100%',
       maxWidth: '100%',
-    }}>
+    }}
+         onMouseDown={setActiveFrame}
+
+    >
       <canvas
         ref={canvasRef}
-        onPointerDown={setActiveFrame}
       />
     </div>
   )

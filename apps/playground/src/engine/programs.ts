@@ -49,7 +49,6 @@ uniform mat4 u_model;
 uniform mat4 u_view;
 
 uniform vec4 u_color;
-
 out vec4 v_color;
 
 void main() {
@@ -136,6 +135,29 @@ void main() {
 }
 `;
 
+const timelineKeyframeVertexShaderSource = `#version 300 es
+in vec4 a_position;
+
+uniform mat4 u_model;
+uniform vec4 u_color;
+out vec4 v_color;
+
+void main() {
+  gl_Position = u_model * a_position;
+  v_color = u_color;
+}
+`;
+
+const timelineKeyframeFragmentShaderSource = `#version 300 es
+precision lowp float;
+in vec4 v_color;
+out vec4 outColor;
+
+void main() {
+    outColor = v_color;
+}
+`;
+
 export const programs: Program[] = [
   {
     name: 'sprite',
@@ -200,4 +222,22 @@ export const programs: Program[] = [
     },
     renderType: 'triangle_strip'
   },
+  {
+    name: 'timeline-keyframe',
+    vertexShaderSource: timelineKeyframeVertexShaderSource,
+    fragmentShaderSource: timelineKeyframeFragmentShaderSource,
+    bufferInfoArrays: {
+      a_position: {
+        numComponents: 3,
+        data: [
+          -1, -1, 0.0,
+          -1, 1, 0.0,
+          1, -1, 0.0,
+          1, 1, 0.0,
+        ],
+      },
+      indices: [0, 1, 2, 2, 1, 3],
+    },
+    renderType: 'triangles'
+  }
 ];
