@@ -15,6 +15,12 @@ export const Timeline = () => {
   const setActiveFrame = (e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
     e.preventDefault();
+
+    // If not left click
+    if (e.button !== 0) {
+      return;
+    }
+
     // Get canvas element relative position
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -105,7 +111,7 @@ export const Timeline = () => {
       twgl.setUniforms(timelineGridProgramInfo, {
         u_resolution: [gl.canvas.width, gl.canvas.height],
         u_gridSize: [blockWidthInPixels, blockHeightInPixels],
-        u_color: [70 / 255, 66 / 255, 70 / 255, 1],
+        u_color: [0x4f / 255, 0x4b / 255, 0x4f / 255, 1],
 
         u_ratio: devicePixelRatio,
 

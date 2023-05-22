@@ -7,8 +7,6 @@ export const LeftPanel: FC = () => {
   const sceneState = useStoreSubscribe(sceneStore._state);
   const selectedSpriteIds = sceneState.selectedSpriteIds;
 
-  const spritesArray = useMemo(() => Object.values(sceneState.sprites), [sceneState.sprites]);
-
   const selectSprite = (spriteId: string) => {
     sceneStore.setSelectedSpriteId(spriteId);
   }
@@ -23,7 +21,7 @@ export const LeftPanel: FC = () => {
         borderRight: 'var(--border)'
       }}>
       {
-        spritesArray.map((sprite) => {
+        sceneState.sortedSprites.map((sprite) => {
           return (<div
             onClick={() => selectSprite(sprite.id)}
             style={{

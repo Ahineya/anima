@@ -11,11 +11,13 @@ const SpriteProperty: FC<PropsWithChildren> = ({children}) => {
   return (
     <Panel
       style={{
+        minHeight: 24,
         maxHeight: 24,
         borderBottom: 'var(--border)',
         alignItems: 'end',
         justifyContent: 'center',
         padding: '0 8px',
+        color: 'var(--color-text-muted)',
       }}
     >
       {children}
@@ -48,12 +50,13 @@ export const TimelinePanel: FC = () => {
       >
         <Panel
           style={{
+            minHeight: 24,
             maxHeight: 24,
             borderBottom: 'var(--border)',
             alignItems: 'end',
             justifyContent: 'center',
             padding: '0 8px',
-            fontWeight: 600,
+            fontWeight: 400,
           }}
         >
           Sprite
@@ -64,6 +67,7 @@ export const TimelinePanel: FC = () => {
               <Panel
                 key={s.id}
                 style={{
+                  minHeight: Object.keys(s.keyframes).length * 24,
                   maxHeight: Object.keys(s.keyframes).length * 24,
                   borderBottom: 'var(--border)',
                   alignItems: 'end',
@@ -88,12 +92,13 @@ export const TimelinePanel: FC = () => {
       >
         <Panel
           style={{
+            minHeight: 24,
             maxHeight: 24,
             borderBottom: 'var(--border)',
             alignItems: 'end',
             justifyContent: 'center',
             padding: '0 8px',
-            fontWeight: 600,
+            fontWeight: 400,
           }}
         >
           Property
@@ -117,61 +122,40 @@ export const TimelinePanel: FC = () => {
           height: 24,
           minHeight: 24,
           maxHeight: 24,
+          position: 'relative',
+          overflow: 'hidden',
         }}
-        />
+        >
+          {
+            Array.from(Array(framesLength).keys()).map((_, i) => {
+              // Every fps frames, add a label
+              if (i % fps === 0) {
+                return (
+                  <div
+                    key={i}
+                    style={{
+                      width: 12,
+                      height: 24,
+                      minHeight: 24,
+                      maxHeight: 24,
+                      borderLeft: i !== 0 ? 'var(--border)' : 'none',
+                      position: 'absolute',
+                      left: i * 12,
+                      display: 'flex',
+                      alignItems: 'center',
+                      fontSize: '10px',
+                      paddingLeft: '2px',
+                      color: 'var(--color-text-muted)',
+                    }}>
+                    {i / fps}s
+                  </div>
+                )
+              }
+            })
+          }
+        </div>
         <Timeline/>
       </Panel>
-      {/*<div*/}
-      {/*  style={{*/}
-      {/*    display: 'flex',*/}
-      {/*    flexDirection: 'column',*/}
-      {/*  }}*/}
-      {/*>*/}
-      {/*  {*/}
-      {/*    sprites.map(s => {*/}
-
-      {/*      return Object.keys(s.keyframes).map(key => {*/}
-      {/*        const keyframes = s.keyframes[key as keyof typeof s.keyframes];*/}
-
-      {/*        return (*/}
-      {/*          <div*/}
-      {/*            style={{*/}
-      {/*              display: 'flex',*/}
-      {/*              flexDirection: 'row',*/}
-      {/*              height: '24px',*/}
-      {/*              borderBottom: 'var(--border)',*/}
-      {/*            }}*/}
-      {/*          >*/}
-      {/*            {*/}
-      {/*              frames.map((frame) => {*/}
-      {/*                return (*/}
-      {/*                  <div*/}
-      {/*                    style={{*/}
-      {/*                      width: '12px',*/}
-      {/*                      minWidth: '12px',*/}
-      {/*                      height: '100%',*/}
-      {/*                      borderRight: 'var(--border)',*/}
-      {/*                      backgroundColor: keyframes[frame] ? 'red' : 'transparent',*/}
-      {/*                      // borderBottom: `1px solid ${frame === currentFrame ? 'green' : 'transparent'}`,*/}
-      {/*                      outline: `1px solid ${frame === currentFrame ? 'green' : 'transparent'}`,*/}
-      {/*                    }}*/}
-      {/*                    onClick={() => sceneStore.setCurrentFrame(frame)}*/}
-      {/*                  >*/}
-
-      {/*                  </div>*/}
-      {/*                )*/}
-      {/*              })*/}
-      {/*            }*/}
-      {/*          </div>*/}
-      {/*        )*/}
-      {/*      })*/}
-      {/*    })*/}
-      {/*  }*/}
-
-      {/*</div>*/}
-      {/*<div>*/}
-      {/*  {currentFrame}*/}
-      {/*</div>*/}
     </Panel>
   )
 }
