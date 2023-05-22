@@ -104,6 +104,8 @@ export const Timeline = () => {
     <div ref={canvasContainerRef} style={{
       maxHeight: '320px',
       height: '320px',
+      width: '100%',
+      maxWidth: '100%',
     }}>
       <canvas
         ref={canvasRef}
