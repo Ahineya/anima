@@ -27,6 +27,7 @@ type SceneState = {
   currentFrame: number;
 }
 
+// TODO: Add to the engine
 class SceneStore {
   public gl = new StoreSubject<WebGLRenderingContext | null>(null);
   public programs = new Map<string, RenderProgram>();
@@ -68,6 +69,21 @@ class SceneStore {
     this._state.next({
       ...this._state.getValue(),
       selectedSpriteIds: [id],
+    });
+  }
+
+  public setSelectedSpriteByIndex(index: number) {
+    const sortedSprites = this._state.getValue().sortedSprites;
+
+    if (sortedSprites[index]) {
+      this.setSelectedSpriteId(sortedSprites[index].id);
+    }
+  }
+
+  public setScale(scale: number) {
+    this._state.next({
+      ...this._state.getValue(),
+      scale,
     });
   }
 
@@ -164,8 +180,66 @@ class SceneStore {
       return;
     }
 
-    sprite.x = x;
-    sprite.y = y;
+    // Insert a keyframe
+
+    const currentKeyframe = sprite.keyframes.position[this.state().currentFrame];
+
+    // First we need to find the previous and next keyframe
+    const previousKeyframe = Object.values(sprite.keyframes.position)
+      .reverse()
+      .find((keyframe) => keyframe.frame <= this.state().currentFrame);
+
+    const nextKeyframe = Object.values(sprite.keyframes.position)
+      .find((keyframe) => keyframe.frame > this.state().currentFrame);
+
+    if (!currentKeyframe) {
+      if (previousKeyframe && nextKeyframe) {
+        previousKeyframe.next = this.state().currentFrame;
+        nextKeyframe.prev = this.state().currentFrame;
+
+        sprite.keyframes.position[this.state().currentFrame] = {
+          frame: this.state().currentFrame,
+          x,
+          y,
+          prev: previousKeyframe.frame,
+          next: nextKeyframe.frame,
+        }
+      } else if (previousKeyframe) {
+        previousKeyframe.next = this.state().currentFrame;
+
+        sprite.keyframes.position[this.state().currentFrame] = {
+          frame: this.state().currentFrame,
+          x,
+          y,
+          prev: previousKeyframe.frame,
+          next: null,
+        }
+      } else if (nextKeyframe) {
+        nextKeyframe.prev = this.state().currentFrame;
+
+        sprite.keyframes.position[this.state().currentFrame] = {
+          frame: this.state().currentFrame,
+          x,
+          y,
+          prev: null,
+          next: nextKeyframe.frame,
+        }
+      } else {
+        sprite.keyframes.position[this.state().currentFrame] = {
+          frame: this.state().currentFrame,
+          x,
+          y,
+          prev: null,
+          next: null,
+        }
+      }
+    } else {
+      currentKeyframe.x = x;
+      currentKeyframe.y = y;
+    }
+
+    sprite.keyframesIndexes.position.push(this.state().currentFrame);
+    sprite.keyframesIndexes.position.sort((a, b) => a - b);
 
     this._state.next({
       ...this._state.getValue(),
@@ -206,7 +280,7 @@ class SceneStore {
     });
   }
 
-  public calculateNextSpritesParams(frame: number) {
+  public calculateNextSpritesParams(frame: number, update = true) {
     const sprites = this.state().sprites;
     const currentFrame = frame;
 
@@ -294,8 +368,11 @@ class SceneStore {
       }
     }
 
-    this.nextSpritesParams.next(nextSpritesParams);
-    this.nextSpritesScheduledIndex.next(frame);
+    if (update) {
+      this.nextSpritesParams.next(nextSpritesParams);
+    }
+
+    return nextSpritesParams;
   }
 
   public state() {

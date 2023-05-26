@@ -43,10 +43,14 @@ export const Timeline = () => {
 
     console.log(frame, row);
 
+    const spriteIndex = Math.floor(y / (4 * 24));
+    console.log('Sprite index', spriteIndex);
+
     sceneStore.setIsPlaying(false);
 
     sceneStore.calculateNextSpritesParams(frame);
     sceneStore.setCurrentFrame(frame);
+    sceneStore.setSelectedSpriteByIndex(spriteIndex);
   }
 
   useLayoutEffect(() => {
@@ -143,7 +147,7 @@ export const Timeline = () => {
           const initialYOffset = -scaleY * 48;
           const oneFrameYOffset = (-scaleY * 96);
 
-          const translatedPx = twgl.m4.translate(twgl.m4.identity(), [initialXOffset + oneFrameXOffset * keyframe.frame, initialYOffset + (oneFrameYOffset * spriteIndex), 0]);
+          const translatedPx = twgl.m4.translate(twgl.m4.identity(), [initialXOffset + oneFrameXOffset * keyframe.frame, initialYOffset + (oneFrameYOffset * spriteIndex * 4), 0]);
           const translated = twgl.m4.translate(translatedPx, [-1, 1, 0]);
           const scaled = twgl.m4.scale(translated, [scaleX * 12, scaleY * 12, 0]);
           const rotated = twgl.m4.rotateZ(scaled, rot45);

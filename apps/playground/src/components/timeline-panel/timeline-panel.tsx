@@ -73,6 +73,10 @@ export const TimelinePanel: FC = () => {
                   alignItems: 'end',
                   justifyContent: 'center',
                   padding: '0 8px',
+                  backgroundColor: sceneState.selectedSpriteIds.includes(s.id) ? 'var(--color-panel-selected)' : 'var(--color-panel)',
+                }}
+                onClick={() => {
+                  sceneStore.setSelectedSpriteId(s.id);
                 }}
               >
                 {s.name}
@@ -106,12 +110,20 @@ export const TimelinePanel: FC = () => {
         {
           sceneState.sortedSprites.map(s => {
             return (
-              <>
+              <Panel
+                onClick={() => {
+                  sceneStore.setSelectedSpriteId(s.id);
+                }}
+                style={{
+                  minHeight: 24 * 4,
+                  maxHeight: 24 * 4,
+                }}
+              >
                 <SpriteProperty>Position</SpriteProperty>
                 <SpriteProperty>Rotation</SpriteProperty>
                 <SpriteProperty>Scale</SpriteProperty>
                 <SpriteProperty>Opacity</SpriteProperty>
-              </>
+              </Panel>
 
             )
           })

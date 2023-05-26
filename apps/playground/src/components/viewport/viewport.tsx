@@ -8,12 +8,9 @@ const fps = 30;
 const framesLength = 5 * fps;
 
 function createOrthographicProjectionMatrix(width: number, height: number) {
-
   const aspectRatio = width / height;
 
   console.log(aspectRatio, width, height);
-
-  const resizeFactor = 2 * window.devicePixelRatio;
 
   const left = -width / 2;
   const right = width / 2;
@@ -37,6 +34,36 @@ export const Viewport: FC<IProps> = () => {
 
   const deltaStartTime = useRef(0);
   const startTime = useRef(0);
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      return;
+    }
+
+    // Cursor coordinates
+    const x = e.clientX;
+    const y = e.clientY;
+
+    // Canvas coordinates
+    const rect = canvas.getBoundingClientRect();
+    const canvasX = x - rect.left;
+    const canvasY = y - rect.top;
+
+    // Normalized to (0, 0) in the center
+    const normalizedX = 1 * (canvasX - rect.width / 2) * sceneStore.state().scale;
+    const normalizedY = -1 * (canvasY - rect.height / 2) * sceneStore.state().scale;
+
+    console.log(normalizedX, normalizedY);
+  }
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    /**/
+  }
+
+  const handleMouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
+    /**/
+  }
 
   useKeybinding(' ', () => {
     sceneStore.setIsPlaying(!sceneStore.isPlaying.getValue());
@@ -283,10 +310,15 @@ export const Viewport: FC<IProps> = () => {
   }, []);
 
   return (
-    <div style={{
-      width: "100%",
-      height: "100%",
-    }}>
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+      }}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+    >
       <canvas ref={canvasRef}/>
     </div>
   );

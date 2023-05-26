@@ -5,20 +5,33 @@ import {useStoreSubscribe} from "@anima/use-store-subscribe";
 
 export const RightPanel: FC = () => {
   const state = useStoreSubscribe(sceneStore._state);
+  const isPlaying = useStoreSubscribe(sceneStore.isPlaying);
   const sprites = state.sprites;
 
   const selectedSpriteIds = state.selectedSpriteIds;
 
-  const selectedSprites = useMemo(() => {
-    return selectedSpriteIds.map((spriteId) => sprites[spriteId]);
-  }, [selectedSpriteIds, sprites]);
+  const nextSpritesParams = useStoreSubscribe(sceneStore.nextSpritesParams);
+
+  const selectedSpritesParams = useMemo(() => {
+    return selectedSpriteIds.map((spriteId) => {
+      return {
+        id: spriteId,
+        width: sprites[spriteId].width,
+        height: sprites[spriteId].height,
+        name: sprites[spriteId].name,
+        params: nextSpritesParams[spriteId]
+      }
+    });
+  }, [selectedSpriteIds, nextSpritesParams]);
 
   const changeSpriteX = (spriteId: string, x: number) => {
-    sceneStore.setSpritePosition(spriteId, x, sprites[spriteId].y);
+    const spriteParams = selectedSpritesParams.find(s => s.id === spriteId);
+    sceneStore.setSpritePosition(spriteId, x, spriteParams?.params.position[1] ?? sprites[spriteId].y);
   }
 
   const changeSpriteY = (spriteId: string, y: number) => {
-    sceneStore.setSpritePosition(spriteId, sprites[spriteId].x, y);
+    const spriteParams = selectedSpritesParams.find(s => s.id === spriteId);
+    sceneStore.setSpritePosition(spriteId, spriteParams?.params.position[0] ?? sprites[spriteId].x, y);
   }
 
   const changeSpriteWidth = (spriteId: string, width: number) => {
@@ -38,8 +51,16 @@ export const RightPanel: FC = () => {
         width: 320,
         borderLeft: 'var(--border)'
       }}>
+      <input
+        type="range"
+        min={0.1}
+        max={10}
+        step={0.1}
+        value={1 / state.scale}
+        onChange={(e) => sceneStore.setScale(1 / parseFloat(e.target.value))}
+      />
       {
-        selectedSprites.map((sprite) => {
+        !isPlaying && selectedSpritesParams.map((sprite) => {
             return (
               <>
                 <div>
@@ -55,7 +76,7 @@ export const RightPanel: FC = () => {
                   x:
                   <input
                     type="number"
-                    value={sprite.x}
+                    value={sprite.params.position[0]}
                     onChange={(e) => changeSpriteX(sprite.id, parseInt(e.target.value, 10))}
                   />
                 </div>
@@ -63,7 +84,7 @@ export const RightPanel: FC = () => {
                   y:
                   <input
                     type="number"
-                    value={sprite.y}
+                    value={sprite.params.position[1]}
                     onChange={(e) => changeSpriteY(sprite.id, parseInt(e.target.value, 10))}
                   />
                 </div>
@@ -71,7 +92,7 @@ export const RightPanel: FC = () => {
                   width:
                   <input
                     type="number"
-                    value={sprite.width}
+                    value={sprite.params.scale[0]}
                     onChange={(e) => changeSpriteWidth(sprite.id, parseInt(e.target.value, 10))}
                   />
                 </div>
@@ -79,7 +100,7 @@ export const RightPanel: FC = () => {
                   height:
                   <input
                     type="number"
-                    value={sprite.height}
+                    value={sprite.params.scale[1]}
                     onChange={(e) => changeSpriteHeight(sprite.id, parseInt(e.target.value, 10))}
                   />
                 </div>
