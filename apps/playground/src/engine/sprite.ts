@@ -29,6 +29,7 @@ export class Sprite {
   public y = 0;
   public width = 0;
   public height = 0;
+  public rotation = 0;
   public parentAndOrder?: string; // In format parentId:order. Fractional ordering in 63-base system
   public name = 'New sprite';
   public order: string = generateKeyBetween(null, null);
@@ -93,6 +94,7 @@ export class Sprite {
       y: sprite.y,
       width: sprite.width,
       height: sprite.height,
+      rotation: sprite.rotation,
       name: sprite.name,
       keyframes: sprite.keyframes,
       keyframesIndexes: sprite.keyframesIndexes,
@@ -108,6 +110,7 @@ export class Sprite {
     sprite.y = json.y;
     sprite.width = json.width;
     sprite.height = json.height;
+    sprite.rotation = json.rotation;
     sprite.name = json.name;
     sprite.keyframes = json.keyframes;
     sprite.keyframesIndexes = json.keyframesIndexes;

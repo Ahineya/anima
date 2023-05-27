@@ -1,7 +1,7 @@
 import React, {FC, PropsWithChildren} from "react";
 import {Panel} from "../ui/panel/panel";
 import {Timeline} from "./timeline";
-import {sceneStore} from "../../stores/scene.store";
+import {engine} from "../../engine/scene";
 import {useStoreSubscribe} from "@anima/use-store-subscribe";
 
 const fps = 30;
@@ -27,7 +27,7 @@ const SpriteProperty: FC<PropsWithChildren> = ({children}) => {
 
 export const TimelinePanel: FC = () => {
 
-  const sceneState = useStoreSubscribe(sceneStore._state);
+  const sceneState = useStoreSubscribe(engine._state);
 
   return (
     <Panel
@@ -76,7 +76,7 @@ export const TimelinePanel: FC = () => {
                   backgroundColor: sceneState.selectedSpriteIds.includes(s.id) ? 'var(--color-panel-selected)' : 'var(--color-panel)',
                 }}
                 onClick={() => {
-                  sceneStore.setSelectedSpriteId(s.id);
+                  engine.setSelectedSpriteId(s.id);
                 }}
               >
                 {s.name}
@@ -112,7 +112,7 @@ export const TimelinePanel: FC = () => {
             return (
               <Panel
                 onClick={() => {
-                  sceneStore.setSelectedSpriteId(s.id);
+                  engine.setSelectedSpriteId(s.id);
                 }}
                 style={{
                   minHeight: 24 * 4,

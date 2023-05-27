@@ -1,14 +1,14 @@
 import {FC, useMemo} from "react";
 import {Panel} from "../ui/panel/panel";
-import {sceneStore} from "../../stores/scene.store";
+import {engine} from "../../engine/scene";
 import {useStoreSubscribe} from "@anima/use-store-subscribe";
 
 export const LeftPanel: FC = () => {
-  const sceneState = useStoreSubscribe(sceneStore._state);
+  const sceneState = useStoreSubscribe(engine._state);
   const selectedSpriteIds = sceneState.selectedSpriteIds;
 
   const selectSprite = (spriteId: string) => {
-    sceneStore.setSelectedSpriteId(spriteId);
+    engine.setSelectedSpriteId(spriteId);
   }
 
   return (

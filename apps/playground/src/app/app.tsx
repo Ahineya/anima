@@ -2,7 +2,7 @@ import './app.scss';
 import {useStoreSubscribe} from "@anima/use-store-subscribe";
 import {Panel} from "../components/ui/panel/panel";
 import {Viewport} from "../components/viewport/viewport";
-import {sceneStore} from "../stores/scene.store";
+import {engine} from "../engine/scene";
 import React, {useEffect} from "react";
 import {Sprite} from "../engine/sprite";
 import myImage from "../assets/i.png";
@@ -16,7 +16,7 @@ import {sortByOrder} from "../helpers/sort-by-order.helper";
 
 export function App() {
 
-  const gl = useStoreSubscribe(sceneStore.gl);
+  const gl = useStoreSubscribe(engine.gl);
 
   useEffect(() => {
     if (!gl) {
@@ -44,45 +44,45 @@ export function App() {
         })
       ]);
 
-      // sprites[0].keyframes = {
-      //   ...sprites[0].keyframes,
-      //   position: {
-      //     24: {
-      //       frame: 24,
-      //       x: 512,
-      //       y: 512,
-      //       prev: 0,
-      //       next: 48,
-      //     },
-      //     48: {
-      //       frame: 48,
-      //       x: 0,
-      //       y: 0,
-      //       prev: 24,
-      //       next: 72,
-      //     },
-      //     72: {
-      //       frame: 72,
-      //       x: 512,
-      //       y: 0,
-      //       prev: 48,
-      //       next: null,
-      //     }
-      //   }
-      // }
-      //
-      // sprites[0].keyframesIndexes = {
-      //   ...sprites[0].keyframesIndexes,
-      //   position: Object.keys(sprites[0].keyframes.position).map(Number).sort((a, b) => a - b),
-      // };
+      sprites[1].rotation = 45;
+
+      sprites[0].keyframes = {
+        ...sprites[0].keyframes,
+        rotation: {
+          24: {
+            frame: 24,
+            angle: 0,
+            prev: 0,
+            next: 48,
+          },
+          48: {
+            frame: 48,
+            angle: 45,
+            prev: 24,
+            next: 72,
+          },
+          72: {
+            frame: 72,
+            angle: -45,
+            prev: 48,
+            next: null,
+          }
+        }
+      }
+
+      sprites[0].keyframesIndexes = {
+        ...sprites[0].keyframesIndexes,
+        position: Object.keys(sprites[0].keyframes.position).map(Number).sort((a, b) => a - b),
+        rotation: Object.keys(sprites[0].keyframes.rotation).map(Number).sort((a, b) => a - b),
+      };
 
       sprites.forEach((sprite) => {
-        sceneStore.addSprite(sprite);
+        engine.addSprite(sprite);
       });
     })();
 
     return () => {
-      sceneStore.clearSprites();
+      engine.clearSprites();
     }
   }, [gl]);
 
@@ -102,7 +102,7 @@ export function App() {
     reader.onload = async (e) => {
       const src = e.target!.result as string;
 
-      const lastSprite = sceneStore.state().sortedSprites[sceneStore.state().sortedSprites.length - 1];
+      const lastSprite = engine.state().sortedSprites[engine.state().sortedSprites.length - 1];
 
       const order = generateKeyBetween(lastSprite?.order, null);
 
@@ -113,7 +113,7 @@ export function App() {
         order,
       })
 
-      sceneStore.addSprite(sprite);
+      engine.addSprite(sprite);
     }
 
     reader.readAsDataURL(e.dataTransfer.files[0]);

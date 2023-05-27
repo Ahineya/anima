@@ -1,7 +1,7 @@
 import {useLayoutEffect, useRef} from "react";
 import * as twgl from "twgl.js";
 import {programs} from "../../engine/programs";
-import {sceneStore} from "../../stores/scene.store";
+import {engine} from "../../engine/scene";
 
 const fps = 30;
 const framesLength = 5 * fps;
@@ -33,7 +33,7 @@ export const Timeline = () => {
     const frame = Math.floor(x / 12);
     const row = Math.floor(y / 24);
 
-    const rowsCount = sceneStore.state().sortedSprites.reduce((acc, sprite) => {
+    const rowsCount = engine.state().sortedSprites.reduce((acc, sprite) => {
       return acc + Object.keys(sprite.keyframes).length;
     }, 0);
 
@@ -46,11 +46,11 @@ export const Timeline = () => {
     const spriteIndex = Math.floor(y / (4 * 24));
     console.log('Sprite index', spriteIndex);
 
-    sceneStore.setIsPlaying(false);
+    engine.setIsPlaying(false);
 
-    sceneStore.calculateNextSpritesParams(frame);
-    sceneStore.setCurrentFrame(frame);
-    sceneStore.setSelectedSpriteByIndex(spriteIndex);
+    engine.calculateNextSpritesParams(frame);
+    engine.setCurrentFrame(frame);
+    engine.setSelectedSpriteByIndex(spriteIndex);
   }
 
   useLayoutEffect(() => {
@@ -100,7 +100,7 @@ export const Timeline = () => {
         return;
       }
 
-      const rowsCount = sceneStore.state().sortedSprites.reduce((acc, sprite) => {
+      const rowsCount = engine.state().sortedSprites.reduce((acc, sprite) => {
         return acc + Object.keys(sprite.keyframes).length;
       }, 0);
 
@@ -122,7 +122,7 @@ export const Timeline = () => {
         u_rows: rowsCount,
         u_columns: framesLength,
 
-        u_selectedColumn: sceneStore.state().currentFrame,
+        u_selectedColumn: engine.state().currentFrame,
 
         u_model: twgl.m4.translate(twgl.m4.identity(), [0, 0, 0]),
       });
@@ -132,11 +132,7 @@ export const Timeline = () => {
       gl.useProgram(keyframeProgramInfo.program);
 
       // TODO: This catastrophe should use instancing
-      sceneStore.state().sortedSprites.forEach((sprite, spriteIndex) => {
-        if (!Object.keys(sprite.keyframes.position).length) {
-          return;
-        }
-
+      engine.state().sortedSprites.forEach((sprite, spriteIndex) => {
         const scaleX = 1 / (gl.canvas.width / 2 * devicePixelRatio);
         const scaleY = 1 / (gl.canvas.height / 2 * devicePixelRatio);
 
@@ -159,6 +155,24 @@ export const Timeline = () => {
 
           twgl.drawBufferInfo(gl, timelineGridBufferInfo);
         });
+
+        Object.values(sprite.keyframes.rotation).forEach((keyframe, keyframeIndex) => {
+          const initialYOffset = -scaleY * 48;
+          const oneFrameYOffset = (-scaleY * 96);
+
+          const translatedPx = twgl.m4.translate(twgl.m4.identity(), [initialXOffset + oneFrameXOffset * keyframe.frame, initialYOffset + oneFrameYOffset + (oneFrameYOffset * spriteIndex * 4), 0]);
+          const translated = twgl.m4.translate(translatedPx, [-1, 1, 0]);
+          const scaled = twgl.m4.scale(translated, [scaleX * 12, scaleY * 12, 0]);
+          const rotated = twgl.m4.rotateZ(scaled, rot45);
+
+          twgl.setUniforms(keyframeProgramInfo, {
+            u_color: [0xAD / 255, 0xA8 / 255, 0xAD / 255, 1],
+            u_model: rotated,
+          });
+
+          twgl.drawBufferInfo(gl, timelineGridBufferInfo);
+        });
+
       });
 
       requestAnimationFrame(render);

@@ -1,6 +1,6 @@
 import React, {FC, useLayoutEffect, useRef} from 'react';
 import * as twgl from 'twgl.js';
-import {sceneStore} from "../../stores/scene.store";
+import {engine} from "../../engine/scene";
 import {programs} from "../../engine/programs";
 import {useKeybinding} from "../../hooks/use-keybinding.hook";
 
@@ -51,8 +51,8 @@ export const Viewport: FC<IProps> = () => {
     const canvasY = y - rect.top;
 
     // Normalized to (0, 0) in the center
-    const normalizedX = 1 * (canvasX - rect.width / 2) * sceneStore.state().scale;
-    const normalizedY = -1 * (canvasY - rect.height / 2) * sceneStore.state().scale;
+    const normalizedX = 1 * (canvasX - rect.width / 2) * engine.state().scale;
+    const normalizedY = -1 * (canvasY - rect.height / 2) * engine.state().scale;
 
     console.log(normalizedX, normalizedY);
   }
@@ -66,7 +66,7 @@ export const Viewport: FC<IProps> = () => {
   }
 
   useKeybinding(' ', () => {
-    sceneStore.setIsPlaying(!sceneStore.isPlaying.getValue());
+    engine.setIsPlaying(!engine.isPlaying.getValue());
   });
 
   useLayoutEffect(() => {
@@ -81,14 +81,14 @@ export const Viewport: FC<IProps> = () => {
       return;
     }
 
-    sceneStore.setGl(gl);
+    engine.setGl(gl);
 
     programs.forEach(({name, vertexShaderSource, fragmentShaderSource, bufferInfoArrays, renderType}) => {
-      sceneStore.addProgram(name, vertexShaderSource, fragmentShaderSource, bufferInfoArrays, renderType);
+      engine.addProgram(name, vertexShaderSource, fragmentShaderSource, bufferInfoArrays, renderType);
     });
 
     return () => {
-      sceneStore.programs.forEach(({program, bufferInfo}) => {
+      engine.programs.forEach(({program, bufferInfo}) => {
         gl.deleteProgram(program.program);
 
         if (bufferInfo.attribs) {
@@ -103,7 +103,7 @@ export const Viewport: FC<IProps> = () => {
       });
 
       // Clean up textures for all objects
-      sceneStore.state().sortedSprites.forEach((sprite) => {
+      engine.state().sortedSprites.forEach((sprite) => {
         if (sprite.texture) {
           gl.deleteTexture(sprite.texture);
         }
@@ -140,8 +140,8 @@ export const Viewport: FC<IProps> = () => {
     canvas.style.width = `${canvasContainer.clientWidth}px`;
     canvas.style.height = `${canvasContainer.clientHeight}px`;
 
-    const spriteProgram = sceneStore.programs.get('sprite');
-    const cameraProgram = sceneStore.programs.get('camera');
+    const spriteProgram = engine.programs.get('sprite');
+    const cameraProgram = engine.programs.get('camera');
 
     if (!spriteProgram || !cameraProgram) {
       return;
@@ -152,14 +152,14 @@ export const Viewport: FC<IProps> = () => {
     const projectionMatrix = createOrthographicProjectionMatrix(gl.canvas.width, gl.canvas.height);
 
     function render(time: number) {
-      const currentFrame = sceneStore.state().currentFrame;
+      const currentFrame = engine.state().currentFrame;
 
-      const playing = sceneStore.isPlaying.getValue();
-      const lastPlaying = sceneStore.lastIsPlaying.getValue();
+      const playing = engine.isPlaying.getValue();
+      const lastPlaying = engine.lastIsPlaying.getValue();
 
       if (playing && !lastPlaying) {
         startTime.current = time - (currentFrame + 1) * 1000 / fps;
-        sceneStore.setLastIsPlaying(true);
+        engine.setLastIsPlaying(true);
       }
 
       if (playing) {
@@ -179,7 +179,7 @@ export const Viewport: FC<IProps> = () => {
 
       twgl.setBuffersAndAttributes(gl, spriteProgram.program, spriteProgram.bufferInfo);
 
-      const scale = sceneStore.state().scale;
+      const scale = engine.state().scale;
 
       // viewMatrix is camera position. We want to move the camera in the opposite direction of the model when translating
       let viewMatrix = twgl.m4.translate(twgl.m4.identity(), [0, 0, 0].map(v => -v));
@@ -191,22 +191,29 @@ export const Viewport: FC<IProps> = () => {
       /**
        * Render sprites
        */
-      sceneStore.state().sortedSprites.forEach((sprite, i) => {
+      engine.state().sortedSprites.forEach((sprite, i) => {
         if (!sprite.texture) {
           return;
         }
 
-        const spriteState = sceneStore.nextSpritesParams.getValue()[sprite.id];
+        const spriteState = engine.nextSpritesParams.getValue()[sprite.id];
 
         if (!spriteState) {
           return;
         }
 
         const [x, y] = spriteState.position;
+        const rotation = spriteState.rotation;
+        const rotInRad = rotation * Math.PI / 180;
+
+        const modelMatrix = twgl.m4.identity();
+        twgl.m4.translate(twgl.m4.identity(), [x * devicePixelRatio, y * devicePixelRatio, i * 0.0001], modelMatrix);
+        twgl.m4.scale(modelMatrix, [sprite.width, sprite.height, 0], modelMatrix);
+        twgl.m4.rotateZ(modelMatrix, rotInRad, modelMatrix);
 
         twgl.setUniforms(spriteProgram.program, {
           u_texture: sprite.texture,
-          u_model: twgl.m4.scale(twgl.m4.translate(twgl.m4.identity(), [x * devicePixelRatio, y * devicePixelRatio, i * 0.0001]), [sprite.width, sprite.height, 0]),
+          u_model: modelMatrix,
           u_view: viewMatrix,
           u_projection: projectionMatrix,
         });
@@ -222,7 +229,7 @@ export const Viewport: FC<IProps> = () => {
       gl.useProgram(cameraProgram.program.program);
       twgl.setBuffersAndAttributes(gl, cameraProgram.program, cameraProgram.bufferInfo);
 
-      const camera = sceneStore.state().camera;
+      const camera = engine.state().camera;
 
       twgl.setUniforms(cameraProgram.program, {
         u_projection: projectionMatrix,
@@ -248,39 +255,45 @@ export const Viewport: FC<IProps> = () => {
        * Render selected sprites box as a rectangle
        */
 
-      sceneStore.state().sortedSprites.forEach((sprite) => {
+      engine.state().sortedSprites.forEach((sprite) => {
 
-        if (!sceneStore.state().selectedSpriteIds.includes(sprite.id)) {
+        if (!engine.state().selectedSpriteIds.includes(sprite.id)) {
           return;
         }
 
-        const spriteState = sceneStore.nextSpritesParams.getValue()[sprite.id];
+        const spriteState = engine.nextSpritesParams.getValue()[sprite.id];
 
         if (!spriteState) {
           return;
         }
 
         const [x, y, z] = spriteState.position;
+        const rotation = spriteState.rotation;
+        const rotInRad = rotation * Math.PI / 180;
+        const modelMatrix = twgl.m4.identity();
+        twgl.m4.translate(twgl.m4.identity(), [x * devicePixelRatio, y * devicePixelRatio, z], modelMatrix);
+        twgl.m4.scale(modelMatrix, [sprite.width, sprite.height, 0], modelMatrix);
+        twgl.m4.rotateZ(modelMatrix, rotInRad, modelMatrix);
 
         twgl.setUniforms(cameraProgram.program, {
           u_projection: projectionMatrix,
-          u_model: twgl.m4.scale(twgl.m4.translate(twgl.m4.identity(), [x * devicePixelRatio, y * devicePixelRatio, z]), [sprite.width, sprite.height, 0]),
+          u_model: modelMatrix,
           u_view: viewMatrix,
           u_color: [0, 0, 1, 1],
         });
 
         twgl.drawBufferInfo(gl, cameraProgram.bufferInfo, cameraProgram.renderType);
 
-        if (devicePixelRatio > 1) {
-          twgl.setUniforms(cameraProgram.program, {
-            u_projection: projectionMatrix,
-            u_model: twgl.m4.scale(twgl.m4.translate(twgl.m4.identity(), [x * devicePixelRatio + 1, y * devicePixelRatio + 1, z]), [sprite.width - 2, sprite.height - 2, 0]),
-            u_view: viewMatrix,
-            u_color: [0, 0, 1, 1],
-          });
-
-          twgl.drawBufferInfo(gl, cameraProgram.bufferInfo, cameraProgram.renderType);
-        }
+        // if (devicePixelRatio > 1) {
+        //   twgl.setUniforms(cameraProgram.program, {
+        //     u_projection: projectionMatrix,
+        //     u_model: twgl.m4.scale(twgl.m4.translate(twgl.m4.identity(), [x * devicePixelRatio + 1, y * devicePixelRatio + 1, z]), [sprite.width - 2, sprite.height - 2, 0]),
+        //     u_view: viewMatrix,
+        //     u_color: [0, 0, 1, 1],
+        //   });
+        //
+        //   twgl.drawBufferInfo(gl, cameraProgram.bufferInfo, cameraProgram.renderType);
+        // }
       });
 
       gl.lineWidth(1);
@@ -294,8 +307,8 @@ export const Viewport: FC<IProps> = () => {
         // If frame is the same as the current frame, don't update it
         // TODO: Double buffering please
         if (frame !== currentFrame) {
-          sceneStore.calculateNextSpritesParams(frame);
-          sceneStore.setCurrentFrame(frame);
+          engine.calculateNextSpritesParams(frame);
+          engine.setCurrentFrame(frame);
         }
       }
 
