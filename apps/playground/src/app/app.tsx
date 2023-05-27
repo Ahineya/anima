@@ -2,7 +2,7 @@ import './app.scss';
 import {useStoreSubscribe} from "@anima/use-store-subscribe";
 import {Panel} from "../components/ui/panel/panel";
 import {Viewport} from "../components/viewport/viewport";
-import {engine} from "../engine/scene";
+import {engine} from "../engine/engine";
 import React, {useEffect} from "react";
 import {Sprite} from "../engine/sprite";
 import myImage from "../assets/i.png";

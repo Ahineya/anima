@@ -1,7 +1,8 @@
 import {useLayoutEffect, useRef} from "react";
 import * as twgl from "twgl.js";
 import {programs} from "../../engine/programs";
-import {engine} from "../../engine/scene";
+import {engine} from "../../engine/engine";
+import {KeyframeType} from "../../engine/sprite";
 
 const fps = 30;
 const framesLength = 5 * fps;
@@ -46,11 +47,17 @@ export const Timeline = () => {
     const spriteIndex = Math.floor(y / (4 * 24));
     console.log('Sprite index', spriteIndex);
 
+    const selectedPropertyIndex = row % 4;
+
+    const properties = Object.keys(engine.state().sortedSprites[spriteIndex].keyframes) as KeyframeType[];
+    const property: KeyframeType = properties[selectedPropertyIndex];
+
     engine.setIsPlaying(false);
 
     engine.calculateNextSpritesParams(frame);
     engine.setCurrentFrame(frame);
     engine.setSelectedSpriteByIndex(spriteIndex);
+    engine.setSelectedProperty(property);
   }
 
   useLayoutEffect(() => {

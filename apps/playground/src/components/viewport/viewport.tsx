@@ -1,6 +1,6 @@
 import React, {FC, useLayoutEffect, useRef} from 'react';
 import * as twgl from 'twgl.js';
-import {engine} from "../../engine/scene";
+import {engine} from "../../engine/engine";
 import {programs} from "../../engine/programs";
 import {useKeybinding} from "../../hooks/use-keybinding.hook";
 

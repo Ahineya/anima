@@ -1,6 +1,6 @@
 import {FC, useMemo} from "react";
 import {Panel} from "../ui/panel/panel";
-import {engine} from "../../engine/scene";
+import {engine} from "../../engine/engine";
 import {useStoreSubscribe} from "@anima/use-store-subscribe";
 
 export const LeftPanel: FC = () => {

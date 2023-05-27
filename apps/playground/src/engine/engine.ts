@@ -25,10 +25,11 @@ type SceneState = {
   sortedSprites: Sprite[]; // Sorted sprites
   selectedSpriteIds: string[];
   currentFrame: number;
+  selectedProperty: KeyframeType;
 }
 
 // TODO: Add to the engine
-class Scene {
+class Engine {
   public gl = new StoreSubject<WebGLRenderingContext | null>(null);
   public programs = new Map<string, RenderProgram>();
 
@@ -44,6 +45,7 @@ class Scene {
     sortedSprites: [],
     currentFrame: 0,
     selectedSpriteIds: [],
+    selectedProperty: 'position',
   });
 
   public isPlaying = new StoreSubject<boolean>(false);
@@ -78,6 +80,13 @@ class Scene {
     if (sortedSprites[index]) {
       this.setSelectedSpriteId(sortedSprites[index].id);
     }
+  }
+
+  public setSelectedProperty(property: KeyframeType) {
+    this._state.next({
+      ...this._state.getValue(),
+      selectedProperty: property,
+    });
   }
 
   public setScale(scale: number) {
@@ -464,4 +473,4 @@ class Scene {
   }
 }
 
-export const engine = new Scene();
+export const engine = new Engine();

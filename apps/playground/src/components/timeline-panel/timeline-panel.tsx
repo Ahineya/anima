@@ -1,13 +1,18 @@
 import React, {FC, PropsWithChildren} from "react";
 import {Panel} from "../ui/panel/panel";
 import {Timeline} from "./timeline";
-import {engine} from "../../engine/scene";
+import {engine} from "../../engine/engine";
 import {useStoreSubscribe} from "@anima/use-store-subscribe";
 
 const fps = 30;
 const framesLength = 5 * fps; // 5 seconds
 
-const SpriteProperty: FC<PropsWithChildren> = ({children}) => {
+type SpritePropertyProps = PropsWithChildren<{
+  selected: boolean;
+}>;
+
+
+const SpriteProperty: FC<SpritePropertyProps> = ({selected, children}) => {
   return (
     <Panel
       style={{
@@ -17,7 +22,7 @@ const SpriteProperty: FC<PropsWithChildren> = ({children}) => {
         alignItems: 'end',
         justifyContent: 'center',
         padding: '0 8px',
-        color: 'var(--color-text-muted)',
+        color: selected ? 'var(--color-active)' : 'var(--color-text-muted)',
       }}
     >
       {children}
@@ -119,10 +124,10 @@ export const TimelinePanel: FC = () => {
                   maxHeight: 24 * 4,
                 }}
               >
-                <SpriteProperty>Position</SpriteProperty>
-                <SpriteProperty>Rotation</SpriteProperty>
-                <SpriteProperty>Scale</SpriteProperty>
-                <SpriteProperty>Opacity</SpriteProperty>
+                <SpriteProperty selected={sceneState.selectedSpriteIds.includes(s.id) && sceneState.selectedProperty === 'position'}>Position</SpriteProperty>
+                <SpriteProperty selected={sceneState.selectedSpriteIds.includes(s.id) && sceneState.selectedProperty === 'rotation'}>Rotation</SpriteProperty>
+                <SpriteProperty selected={sceneState.selectedSpriteIds.includes(s.id) && sceneState.selectedProperty === 'scale'}>Scale</SpriteProperty>
+                <SpriteProperty selected={sceneState.selectedSpriteIds.includes(s.id) && sceneState.selectedProperty === 'opacity'}>Opacity</SpriteProperty>
               </Panel>
 
             )
