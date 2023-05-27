@@ -204,11 +204,12 @@ export const Viewport: FC<IProps> = () => {
 
         const [x, y] = spriteState.position;
         const rotation = spriteState.rotation;
+        const [width, height] = spriteState.scale;
         const rotInRad = rotation * Math.PI / 180;
 
         const modelMatrix = twgl.m4.identity();
         twgl.m4.translate(twgl.m4.identity(), [x * devicePixelRatio, y * devicePixelRatio, i * 0.0001], modelMatrix);
-        twgl.m4.scale(modelMatrix, [sprite.width, sprite.height, 0], modelMatrix);
+        twgl.m4.scale(modelMatrix, [width, height, 0], modelMatrix);
         twgl.m4.rotateZ(modelMatrix, rotInRad, modelMatrix);
 
         twgl.setUniforms(spriteProgram.program, {
@@ -269,10 +270,12 @@ export const Viewport: FC<IProps> = () => {
 
         const [x, y, z] = spriteState.position;
         const rotation = spriteState.rotation;
+        const [width, height] = spriteState.scale;
+
         const rotInRad = rotation * Math.PI / 180;
         const modelMatrix = twgl.m4.identity();
         twgl.m4.translate(twgl.m4.identity(), [x * devicePixelRatio, y * devicePixelRatio, z], modelMatrix);
-        twgl.m4.scale(modelMatrix, [sprite.width, sprite.height, 0], modelMatrix);
+        twgl.m4.scale(modelMatrix, [width, height, 0], modelMatrix);
         twgl.m4.rotateZ(modelMatrix, rotInRad, modelMatrix);
 
         twgl.setUniforms(cameraProgram.program, {

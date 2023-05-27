@@ -44,41 +44,28 @@ export function App() {
         })
       ]);
 
-      sprites[1].rotation = 45;
-
-      sprites[0].keyframes = {
-        ...sprites[0].keyframes,
-        rotation: {
-          24: {
-            frame: 24,
-            angle: 0,
-            prev: 0,
-            next: 48,
-          },
-          48: {
-            frame: 48,
-            angle: 45,
-            prev: 24,
-            next: 72,
-          },
-          72: {
-            frame: 72,
-            angle: -45,
-            prev: 48,
-            next: null,
-          }
-        }
-      }
-
-      sprites[0].keyframesIndexes = {
-        ...sprites[0].keyframesIndexes,
-        position: Object.keys(sprites[0].keyframes.position).map(Number).sort((a, b) => a - b),
-        rotation: Object.keys(sprites[0].keyframes.rotation).map(Number).sort((a, b) => a - b),
-      };
-
       sprites.forEach((sprite) => {
         engine.addSprite(sprite);
       });
+
+      engine.addKeyframe(sprites[0].id, 24, 'position', {
+        x: 512,
+        y: 512,
+      });
+
+      engine.addKeyframe(sprites[0].id, 48, 'position', {
+        x: 0,
+        y: 0,
+      });
+
+      engine.addKeyframe(sprites[0].id, 24, 'rotation', {
+        angle: 45,
+      });
+
+      engine.addKeyframe(sprites[0].id, 48, 'rotation', {
+        angle: 0,
+      });
+
     })();
 
     return () => {

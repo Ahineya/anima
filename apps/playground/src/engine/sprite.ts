@@ -10,7 +10,7 @@ export type KeyframeDoublyLinkedList = {
 export type Keyframes = {
   position: Record<number, {x: number, y: number} & KeyframeDoublyLinkedList>,
   rotation: Record<number, {angle: number} & KeyframeDoublyLinkedList>,
-  scale: Record<number, {scale: number} & KeyframeDoublyLinkedList>,
+  scale: Record<number, {width: number, height: number} & KeyframeDoublyLinkedList>,
   opacity: Record<number, {opacity: number} & KeyframeDoublyLinkedList>,
 }
 
@@ -20,6 +20,10 @@ export type SpriteFrameState = {
   scale: [number, number];
   opacity: number;
 }
+
+export type KeyframeType = keyof Keyframes;
+
+export type KeyframeValue<Type extends KeyframeType> = Type extends 'position' ? {x: number, y: number} : Type extends 'rotation' ? {angle: number} : Type extends 'scale' ? {width: number, height: number} : Type extends 'opacity' ? {opacity: number} : never;
 
 export class Sprite {
   public texture: WebGLTexture;

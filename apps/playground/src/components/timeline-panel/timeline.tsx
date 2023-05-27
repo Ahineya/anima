@@ -173,6 +173,23 @@ export const Timeline = () => {
           twgl.drawBufferInfo(gl, timelineGridBufferInfo);
         });
 
+        Object.values(sprite.keyframes.scale).forEach((keyframe, keyframeIndex) => {
+          const initialYOffset = -scaleY * 48;
+          const oneFrameYOffset = (-scaleY * 96);
+
+          const translatedPx = twgl.m4.translate(twgl.m4.identity(), [initialXOffset + oneFrameXOffset * keyframe.frame, initialYOffset + oneFrameYOffset * 2 + (oneFrameYOffset * spriteIndex * 4), 0]);
+          const translated = twgl.m4.translate(translatedPx, [-1, 1, 0]);
+          const scaled = twgl.m4.scale(translated, [scaleX * 12, scaleY * 12, 0]);
+          const rotated = twgl.m4.rotateZ(scaled, rot45);
+
+          twgl.setUniforms(keyframeProgramInfo, {
+            u_color: [0xAD / 255, 0xA8 / 255, 0xAD / 255, 1],
+            u_model: rotated,
+          });
+
+          twgl.drawBufferInfo(gl, timelineGridBufferInfo);
+        });
+
       });
 
       requestAnimationFrame(render);

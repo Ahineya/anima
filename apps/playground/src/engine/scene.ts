@@ -1,5 +1,5 @@
 import {StoreSubject} from "@anima/store-subject";
-import {Sprite, SpriteFrameState} from "./sprite";
+import {KeyframeType, KeyframeValue, Sprite, SpriteFrameState} from "./sprite";
 import * as twgl from "twgl.js";
 import {RenderType} from "./renderType";
 import {sortByOrder} from "../helpers/sort-by-order.helper";
@@ -174,146 +174,73 @@ class Scene {
   }
 
   public setSpritePosition(id: string, x: number, y: number) {
-    const sprite = this._state.getValue().sprites[id];
-
-    if (!sprite) {
-      return;
-    }
-
-    // Insert a keyframe
-
-    const currentKeyframe = sprite.keyframes.position[this.state().currentFrame];
-
-    // First we need to find the previous and next keyframe
-    const previousKeyframe = Object.values(sprite.keyframes.position)
-      .reverse()
-      .find((keyframe) => keyframe.frame <= this.state().currentFrame);
-
-    const nextKeyframe = Object.values(sprite.keyframes.position)
-      .find((keyframe) => keyframe.frame > this.state().currentFrame);
-
-    if (!currentKeyframe) {
-      if (previousKeyframe && nextKeyframe) {
-        previousKeyframe.next = this.state().currentFrame;
-        nextKeyframe.prev = this.state().currentFrame;
-
-        sprite.keyframes.position[this.state().currentFrame] = {
-          frame: this.state().currentFrame,
-          x,
-          y,
-          prev: previousKeyframe.frame,
-          next: nextKeyframe.frame,
-        }
-      } else if (previousKeyframe) {
-        previousKeyframe.next = this.state().currentFrame;
-
-        sprite.keyframes.position[this.state().currentFrame] = {
-          frame: this.state().currentFrame,
-          x,
-          y,
-          prev: previousKeyframe.frame,
-          next: null,
-        }
-      } else if (nextKeyframe) {
-        nextKeyframe.prev = this.state().currentFrame;
-
-        sprite.keyframes.position[this.state().currentFrame] = {
-          frame: this.state().currentFrame,
-          x,
-          y,
-          prev: null,
-          next: nextKeyframe.frame,
-        }
-      } else {
-        sprite.keyframes.position[this.state().currentFrame] = {
-          frame: this.state().currentFrame,
-          x,
-          y,
-          prev: null,
-          next: null,
-        }
-      }
-    } else {
-      currentKeyframe.x = x;
-      currentKeyframe.y = y;
-    }
-
-    sprite.keyframesIndexes.position.push(this.state().currentFrame);
-    sprite.keyframesIndexes.position.sort((a, b) => a - b);
-
-    this._state.next({
-      ...this._state.getValue(),
-      sprites: {
-        ...this._state.getValue().sprites,
-        [id]: sprite,
-      },
-    });
-
-    this.calculateNextSpritesParams(this.state().currentFrame);
+    this.addKeyframe(id, this.state().currentFrame, 'position', {x, y});
   }
 
   public setSpriteRotation(id: string, angle: number) {
+    this.addKeyframe(id, this.state().currentFrame, 'rotation', {angle});
+  }
+
+  public addKeyframe<T extends KeyframeType>(id: string, frame: number, type: T, value: KeyframeValue<T>) {
     const sprite = this._state.getValue().sprites[id];
 
     if (!sprite) {
       return;
     }
 
-    // Insert a keyframe
-
-    const currentKeyframe = sprite.keyframes.rotation[this.state().currentFrame];
+    const currentKeyframe = sprite.keyframes[type][frame];
 
     // First we need to find the previous and next keyframe
-    const previousKeyframe = Object.values(sprite.keyframes.rotation)
+    const previousKeyframe = Object.values(sprite.keyframes[type])
       .reverse()
-      .find((keyframe) => keyframe.frame <= this.state().currentFrame);
+      .find((keyframe) => keyframe.frame <= frame);
 
-    const nextKeyframe = Object.values(sprite.keyframes.rotation)
-      .find((keyframe) => keyframe.frame > this.state().currentFrame);
+    const nextKeyframe = Object.values(sprite.keyframes[type])
+      .find((keyframe) => keyframe.frame > frame);
 
     if (!currentKeyframe) {
       if (previousKeyframe && nextKeyframe) {
-        previousKeyframe.next = this.state().currentFrame;
-        nextKeyframe.prev = this.state().currentFrame;
+        previousKeyframe.next = frame;
+        nextKeyframe.prev = frame;
 
-        sprite.keyframes.rotation[this.state().currentFrame] = {
-          frame: this.state().currentFrame,
-          angle,
+        sprite.keyframes[type][frame] = {
+          frame,
+          ...value,
           prev: previousKeyframe.frame,
           next: nextKeyframe.frame,
         }
       } else if (previousKeyframe) {
-        previousKeyframe.next = this.state().currentFrame;
+        previousKeyframe.next = frame;
 
-        sprite.keyframes.rotation[this.state().currentFrame] = {
-          frame: this.state().currentFrame,
-          angle,
+        sprite.keyframes[type][frame] = {
+          frame,
+          ...value,
           prev: previousKeyframe.frame,
           next: null,
         }
       } else if (nextKeyframe) {
-        nextKeyframe.prev = this.state().currentFrame;
+        nextKeyframe.prev = frame;
 
-        sprite.keyframes.rotation[this.state().currentFrame] = {
-          frame: this.state().currentFrame,
-          angle,
+        sprite.keyframes[type][frame] = {
+          frame,
+          ...value,
           prev: null,
           next: nextKeyframe.frame,
         }
       } else {
-        sprite.keyframes.rotation[this.state().currentFrame] = {
-          frame: this.state().currentFrame,
-          angle,
+        sprite.keyframes[type][frame] = {
+          frame,
+          ...value,
           prev: null,
           next: null,
         }
       }
     } else {
-      currentKeyframe.angle = angle;
+      Object.assign(currentKeyframe, value);
     }
 
-    sprite.keyframesIndexes.rotation.push(this.state().currentFrame);
-    sprite.keyframesIndexes.rotation.sort((a, b) => a - b);
+    sprite.keyframesIndexes[type].push(frame);
+    sprite.keyframesIndexes[type].sort((a, b) => a - b);
 
     this._state.next({
       ...this._state.getValue(),
@@ -327,24 +254,7 @@ class Scene {
   }
 
   public setSpriteSize(id: string, width: number, height: number) {
-    const sprite = this._state.getValue().sprites[id];
-
-    if (!sprite) {
-      return;
-    }
-
-    sprite.width = width;
-    sprite.height = height;
-
-    this._state.next({
-      ...this._state.getValue(),
-      sprites: {
-        ...this._state.getValue().sprites,
-        [id]: sprite,
-      },
-    });
-
-    this.calculateNextSpritesParams(this.state().currentFrame);
+    this.addKeyframe(id, this.state().currentFrame, 'scale', {width, height});
   }
 
   public setCurrentFrame(frame: number) {
@@ -363,12 +273,13 @@ class Scene {
     for (const spriteId in sprites) {
       const sprite = sprites[spriteId];
       const translateVector = this.getTranslateVector(sprite, currentFrame);
+      const scaleVector = this.getScaleVector(sprite, currentFrame);
       const rotateAngle = this.getRotateAngle(sprite, currentFrame);
 
       nextSpritesParams[spriteId] = {
         position: translateVector,
         rotation: rotateAngle,
-        scale: [sprite.width, sprite.height],
+        scale: scaleVector,
         opacity: 1,
       }
     }
@@ -496,6 +407,56 @@ class Scene {
     }
 
     return rotateAngle;
+  }
+
+  private getScaleVector(sprite: Sprite, frame: number) {
+    const currentScaleKeyframe = sprite.keyframes.scale[frame];
+    const firstScaleKeyframe = sprite.keyframesIndexes.scale[0];
+    const lastScaleKeyframe = sprite.keyframesIndexes.scale[sprite.keyframesIndexes.scale.length - 1];
+
+    let scaleVector: [number, number] = [sprite.width, sprite.height];
+
+    if (currentScaleKeyframe) {
+      scaleVector = [
+        currentScaleKeyframe.width,
+        currentScaleKeyframe.height
+      ];
+    }
+
+    if (lastScaleKeyframe !== undefined && frame > lastScaleKeyframe) {
+      // Skip interpolation if we are after the last keyframe, just use the last keyframe position
+      scaleVector = [
+        sprite.keyframes.scale[lastScaleKeyframe].width,
+        sprite.keyframes.scale[lastScaleKeyframe].height
+      ];
+      // eslint-disable-next-line no-empty
+    } else if (firstScaleKeyframe !== undefined && frame < firstScaleKeyframe) {
+      // Skip interpolation if we are before the first keyframe
+    } else if (!currentScaleKeyframe) {
+      // Probably we are in between two keyframes. We need to interpolate the position
+      // Find the two keyframes that we are in between
+      const kf = sprite.keyframes;
+
+      const previousKeyframe = [...sprite.keyframesIndexes.scale].reverse().find((keyframe) => keyframe < frame);
+
+      if (previousKeyframe !== undefined) {
+        const nextKeyframe = kf.scale[previousKeyframe].next;
+
+        if (nextKeyframe !== null) {
+          const previousKeyframeScale = kf.scale[previousKeyframe];
+          const nextKeyframeScale = kf.scale[nextKeyframe];
+
+          const progress = (frame - previousKeyframe) / (nextKeyframe - previousKeyframe);
+          const easedProgress = progress < 0.5 ? Math.pow(progress * 2, 2) / 2 : 1 - Math.pow((1 - progress) * 2, 2) / 2;
+          scaleVector = [
+            previousKeyframeScale.width + (nextKeyframeScale.width - previousKeyframeScale.width) * easedProgress,
+            previousKeyframeScale.height + (nextKeyframeScale.height - previousKeyframeScale.height) * easedProgress,
+          ];
+        }
+      }
+    }
+
+    return scaleVector;
   }
 
   public state() {
