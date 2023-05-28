@@ -3,12 +3,62 @@ import * as twgl from "twgl.js";
 import {programs} from "../../engine/programs";
 import {engine} from "../../engine/engine";
 import {KeyframeType} from "../../engine/sprite";
+import {useKeybinding} from "../../hooks/use-keybinding.hook";
 
 const rot45 = (Math.PI / 180) * 45;
 
 export const Timeline = () => {
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useKeybinding('ArrowLeft', () => {
+
+    let newFrame = engine.state().currentFrame - 1;
+    if (newFrame < 0) {
+      newFrame = engine.state().lengthInFrames - 1;
+    }
+
+    engine.calculateNextSpritesParams(newFrame);
+    engine.setCurrentFrame(newFrame);
+  }, true, ['timeline']);
+
+  useKeybinding('shift-ArrowLeft', () => {
+    let newFrame = engine.state().currentFrame - engine.state().fps;
+    if (newFrame < 0) {
+      if (engine.state().currentFrame === 0) {
+        newFrame = engine.state().lengthInFrames - 1;
+      } else {
+        newFrame = 0;
+      }
+    }
+
+    engine.calculateNextSpritesParams(newFrame);
+    engine.setCurrentFrame(newFrame);
+  }, true, ['timeline']);
+
+  useKeybinding('ArrowRight', () => {
+    let newFrame = engine.state().currentFrame + 1;
+    if (newFrame >= engine.state().lengthInFrames) {
+        newFrame = 0;
+    }
+
+    engine.calculateNextSpritesParams(newFrame);
+    engine.setCurrentFrame(newFrame);
+  }, true, ['timeline']);
+
+  useKeybinding('shift-ArrowRight', () => {
+    let newFrame = engine.state().currentFrame + engine.state().fps;
+    if (newFrame >= engine.state().lengthInFrames) {
+      if (engine.state().currentFrame === engine.state().lengthInFrames - 1) {
+        newFrame = 0;
+      } else {
+        newFrame = engine.state().lengthInFrames - 1;
+      }
+    }
+
+    engine.calculateNextSpritesParams(newFrame);
+    engine.setCurrentFrame(newFrame);
+  }, true, ['timeline']);
 
   const setActiveFrame = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();

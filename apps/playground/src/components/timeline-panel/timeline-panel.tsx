@@ -138,7 +138,7 @@ export const TimelinePanel: FC = () => {
         }}
         >
           {
-            Array.from(Array(sceneState.lengthInFrames).keys()).map((_, i) => {
+            Array.from(Array(sceneState.lengthInFrames + 1).keys()).map((_, i) => {
               // Every fps frames, add a label
               if (i % sceneState.fps === 0) {
                 return (
