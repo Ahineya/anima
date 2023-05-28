@@ -12,6 +12,9 @@ export const Timeline = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useKeybinding('ArrowLeft', () => {
+    if (engine.isPlaying.getValue()) {
+      return;
+    }
 
     let newFrame = engine.state().currentFrame - 1;
     if (newFrame < 0) {
@@ -23,6 +26,10 @@ export const Timeline = () => {
   }, true, ['timeline']);
 
   useKeybinding('shift-ArrowLeft', () => {
+    if (engine.isPlaying.getValue()) {
+      return;
+    }
+
     let newFrame = engine.state().currentFrame - engine.state().fps;
     if (newFrame < 0) {
       if (engine.state().currentFrame === 0) {
@@ -37,6 +44,10 @@ export const Timeline = () => {
   }, true, ['timeline']);
 
   useKeybinding('ArrowRight', () => {
+    if (engine.isPlaying.getValue()) {
+      return;
+    }
+
     let newFrame = engine.state().currentFrame + 1;
     if (newFrame >= engine.state().lengthInFrames) {
         newFrame = 0;
@@ -47,6 +58,10 @@ export const Timeline = () => {
   }, true, ['timeline']);
 
   useKeybinding('shift-ArrowRight', () => {
+    if (engine.isPlaying.getValue()) {
+      return;
+    }
+
     let newFrame = engine.state().currentFrame + engine.state().fps;
     if (newFrame >= engine.state().lengthInFrames) {
       if (engine.state().currentFrame === engine.state().lengthInFrames - 1) {

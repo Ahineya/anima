@@ -38,6 +38,8 @@ export class Sprite {
   public name = 'New sprite';
   public order: string = generateKeyBetween(null, null);
 
+  public src = '';
+
   public keyframes: Keyframes = {
     position: {},
     rotation: {},
@@ -68,7 +70,7 @@ export class Sprite {
     });
   }
 
-  static async create(gl: WebGLRenderingContext, url: string, {x, y, width, height, name, z, order}: {x?: number, y?: number, name?: string, width?: number, height?: number, z?: number, order?: string} = {
+  static async create(gl: WebGLRenderingContext, url: string, {x, y, width, height, name, order}: {x?: number, y?: number, name?: string, width?: number, height?: number, order?: string} = {
     x: 0,
     y: 0,
     name: 'New sprite',
@@ -83,6 +85,8 @@ export class Sprite {
         sprite.height = height || image.height;
         sprite.name = name || 'New sprite';
         sprite.order = order || generateKeyBetween(null, null);
+
+        sprite.src = url;
 
         resolve(sprite);
       });
@@ -103,21 +107,26 @@ export class Sprite {
       keyframes: sprite.keyframes,
       keyframesIndexes: sprite.keyframesIndexes,
       order: sprite.order,
+      src: sprite.src,
     };
   }
 
-  static fromJSON(gl: WebGLRenderingContext, json: Omit<Sprite, 'texture'>): Sprite {
-    const sprite = new Sprite(gl, new Image());
+  static async fromJSON(gl: WebGLRenderingContext, json: Omit<Sprite, 'texture'>): Promise<Sprite> {
+    const sprite = await Sprite.create(gl, json.src, {
+      x: json.x,
+      y: json.y,
+      width: json.width,
+      height: json.height,
+      name: json.name,
+      order: json.order,
+    });
+
     sprite.id = json.id;
     sprite.type = json.type;
-    sprite.x = json.x;
-    sprite.y = json.y;
-    sprite.width = json.width;
-    sprite.height = json.height;
     sprite.rotation = json.rotation;
-    sprite.name = json.name;
     sprite.keyframes = json.keyframes;
     sprite.keyframesIndexes = json.keyframesIndexes;
+    sprite.src = json.src;
     return sprite;
   }
 }
