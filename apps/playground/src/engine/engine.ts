@@ -19,6 +19,8 @@ type CameraState = {
 }
 
 type SceneState = {
+  fps: number;
+  lengthInFrames: number;
   camera: CameraState;
   scale: number; // Global scene scale
   sprites: Record<string, Sprite>; // Sprite id -> Sprite
@@ -34,6 +36,8 @@ class Engine {
   public programs = new Map<string, RenderProgram>();
 
   public _state = new StoreSubject<SceneState>({
+    fps: 30,
+    lengthInFrames: 3 * 30, // n seconds
     camera: {
       x: 0,
       y: 0,
@@ -47,6 +51,8 @@ class Engine {
     selectedSpriteIds: [],
     selectedProperty: 'position',
   });
+
+  public currentFrameChangedSignal = new StoreSubject<boolean>(false);
 
   public isPlaying = new StoreSubject<boolean>(false);
   public lastIsPlaying = new StoreSubject<boolean>(false);
@@ -267,10 +273,13 @@ class Engine {
   }
 
   public setCurrentFrame(frame: number) {
-    this._state.next({
-      ...this._state.getValue(),
-      currentFrame: frame,
-    });
+    // this._state.next({
+    //   ...this._state.getValue(),
+    //   currentFrame: frame,
+    // });
+
+    this._state.getValue().currentFrame = frame;
+    this.currentFrameChangedSignal.next(!this.currentFrameChangedSignal.getValue());
   }
 
   public calculateNextSpritesParams(frame: number, update = true) {

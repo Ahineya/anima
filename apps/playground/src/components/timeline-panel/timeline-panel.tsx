@@ -4,9 +4,6 @@ import {Timeline} from "./timeline";
 import {engine} from "../../engine/engine";
 import {useStoreSubscribe} from "@anima/use-store-subscribe";
 
-const fps = 30;
-const framesLength = 5 * fps; // 5 seconds
-
 type SpritePropertyProps = PropsWithChildren<{
   selected: boolean;
 }>;
@@ -30,6 +27,7 @@ const SpriteProperty: FC<SpritePropertyProps> = ({selected, children}) => {
   )
 }
 
+// TODO: This guy redraws itself on every frame. I need to fix it.
 export const TimelinePanel: FC = () => {
 
   const sceneState = useStoreSubscribe(engine._state);
@@ -144,9 +142,9 @@ export const TimelinePanel: FC = () => {
         }}
         >
           {
-            Array.from(Array(framesLength).keys()).map((_, i) => {
+            Array.from(Array(sceneState.lengthInFrames).keys()).map((_, i) => {
               // Every fps frames, add a label
-              if (i % fps === 0) {
+              if (i % sceneState.fps === 0) {
                 return (
                   <div
                     key={i}
@@ -164,7 +162,7 @@ export const TimelinePanel: FC = () => {
                       paddingLeft: '2px',
                       color: 'var(--color-text-muted)',
                     }}>
-                    {i / fps}s
+                    {i / sceneState.fps}s
                   </div>
                 )
               }

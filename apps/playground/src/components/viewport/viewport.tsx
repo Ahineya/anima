@@ -4,9 +4,6 @@ import {engine} from "../../engine/engine";
 import {programs} from "../../engine/programs";
 import {useKeybinding} from "../../hooks/use-keybinding.hook";
 
-const fps = 30;
-const framesLength = 5 * fps;
-
 function createOrthographicProjectionMatrix(width: number, height: number) {
   const aspectRatio = width / height;
 
@@ -158,7 +155,7 @@ export const Viewport: FC<IProps> = () => {
       const lastPlaying = engine.lastIsPlaying.getValue();
 
       if (playing && !lastPlaying) {
-        startTime.current = time - (currentFrame + 1) * 1000 / fps;
+        startTime.current = time - (currentFrame + 1) * 1000 / engine.state().fps;
         engine.setLastIsPlaying(true);
       }
 
@@ -305,7 +302,7 @@ export const Viewport: FC<IProps> = () => {
        * Increment frame if playing. Get current frame based on time and fps. Always start from 0
        */
       if (playing) {
-        const frame = Math.floor((deltaStartTime.current) / (1000 / fps)) % framesLength;
+        const frame = Math.floor((deltaStartTime.current) / (1000 / engine.state().fps)) % engine.state().lengthInFrames;
 
         // If frame is the same as the current frame, don't update it
         // TODO: Double buffering please

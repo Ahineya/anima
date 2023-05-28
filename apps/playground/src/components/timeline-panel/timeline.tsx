@@ -4,9 +4,6 @@ import {programs} from "../../engine/programs";
 import {engine} from "../../engine/engine";
 import {KeyframeType} from "../../engine/sprite";
 
-const fps = 30;
-const framesLength = 5 * fps;
-
 const rot45 = (Math.PI / 180) * 45;
 
 export const Timeline = () => {
@@ -38,7 +35,7 @@ export const Timeline = () => {
       return acc + Object.keys(sprite.keyframes).length;
     }, 0);
 
-    if (row > rowsCount -1) {
+    if (row > rowsCount - 1) {
       return;
     }
 
@@ -127,7 +124,7 @@ export const Timeline = () => {
         u_ratio: devicePixelRatio,
 
         u_rows: rowsCount,
-        u_columns: framesLength,
+        u_columns: engine.state().lengthInFrames,
 
         u_selectedColumn: engine.state().currentFrame,
 
@@ -138,6 +135,7 @@ export const Timeline = () => {
 
       gl.useProgram(keyframeProgramInfo.program);
 
+      // Draw keyframes
       // TODO: This catastrophe should use instancing
       engine.state().sortedSprites.forEach((sprite, spriteIndex) => {
         const scaleX = 1 / (gl.canvas.width / 2 * devicePixelRatio);
@@ -147,6 +145,11 @@ export const Timeline = () => {
         const oneFrameXOffset = scaleX * 48;
 
         Object.values(sprite.keyframes.position).forEach((keyframe, keyframeIndex) => {
+
+          if (keyframe.frame > engine.state().lengthInFrames) {
+            return;
+          }
+
           const initialYOffset = -scaleY * 48;
           const oneFrameYOffset = (-scaleY * 96);
 
@@ -164,6 +167,10 @@ export const Timeline = () => {
         });
 
         Object.values(sprite.keyframes.rotation).forEach((keyframe, keyframeIndex) => {
+          if (keyframe.frame > engine.state().lengthInFrames) {
+            return;
+          }
+
           const initialYOffset = -scaleY * 48;
           const oneFrameYOffset = (-scaleY * 96);
 
@@ -181,6 +188,10 @@ export const Timeline = () => {
         });
 
         Object.values(sprite.keyframes.scale).forEach((keyframe, keyframeIndex) => {
+          if (keyframe.frame > engine.state().lengthInFrames) {
+            return;
+          }
+
           const initialYOffset = -scaleY * 48;
           const oneFrameYOffset = (-scaleY * 96);
 

@@ -5,6 +5,7 @@ import {useStoreSubscribe} from "@anima/use-store-subscribe";
 
 export const RightPanel: FC = () => {
   const state = useStoreSubscribe(engine._state);
+  const currentFrameChangedSignal = useStoreSubscribe(engine.currentFrameChangedSignal);
   const isPlaying = useStoreSubscribe(engine.isPlaying);
   const sprites = state.sprites;
 
@@ -22,7 +23,7 @@ export const RightPanel: FC = () => {
         params: nextSpritesParams[spriteId]
       }
     });
-  }, [selectedSpriteIds, nextSpritesParams]);
+  }, [sprites, selectedSpriteIds, nextSpritesParams, currentFrameChangedSignal]);
 
   const changeSpriteX = (spriteId: string, x: number) => {
     const spriteParams = selectedSpritesParams.find(s => s.id === spriteId);
@@ -35,11 +36,13 @@ export const RightPanel: FC = () => {
   }
 
   const changeSpriteWidth = (spriteId: string, width: number) => {
-    engine.setSpriteSize(spriteId, width, sprites[spriteId].height);
+    const spriteParams = selectedSpritesParams.find(s => s.id === spriteId);
+    engine.setSpriteSize(spriteId, width, spriteParams?.params.scale[1] ?? sprites[spriteId].height);
   }
 
   const changeSpriteHeight = (spriteId: string, height: number) => {
-    engine.setSpriteSize(spriteId, sprites[spriteId].width, height);
+    const spriteParams = selectedSpritesParams.find(s => s.id === spriteId);
+    engine.setSpriteSize(spriteId, spriteParams?.params.scale[0] ?? sprites[spriteId].width, height);
   }
 
   return (
