@@ -33,15 +33,7 @@ export const TimelinePanel: FC = () => {
   const sceneState = useStoreSubscribe(engine._state);
 
   return (
-    <Panel
-      style={{
-        maxHeight: 320,
-        minHeight: 320,
-        height: 320,
-        borderTop: 'var(--border)',
-      }}
-      direction={'row'}
-    >
+    <>
       <Panel
         style={{
           width: 320,
@@ -122,10 +114,14 @@ export const TimelinePanel: FC = () => {
                   maxHeight: 24 * 4,
                 }}
               >
-                <SpriteProperty selected={sceneState.selectedSpriteIds.includes(s.id) && sceneState.selectedProperty === 'position'}>Position</SpriteProperty>
-                <SpriteProperty selected={sceneState.selectedSpriteIds.includes(s.id) && sceneState.selectedProperty === 'rotation'}>Rotation</SpriteProperty>
-                <SpriteProperty selected={sceneState.selectedSpriteIds.includes(s.id) && sceneState.selectedProperty === 'scale'}>Scale</SpriteProperty>
-                <SpriteProperty selected={sceneState.selectedSpriteIds.includes(s.id) && sceneState.selectedProperty === 'opacity'}>Opacity</SpriteProperty>
+                <SpriteProperty
+                  selected={sceneState.selectedSpriteIds.includes(s.id) && sceneState.selectedProperty === 'position'}>Position</SpriteProperty>
+                <SpriteProperty
+                  selected={sceneState.selectedSpriteIds.includes(s.id) && sceneState.selectedProperty === 'rotation'}>Rotation</SpriteProperty>
+                <SpriteProperty
+                  selected={sceneState.selectedSpriteIds.includes(s.id) && sceneState.selectedProperty === 'scale'}>Scale</SpriteProperty>
+                <SpriteProperty
+                  selected={sceneState.selectedSpriteIds.includes(s.id) && sceneState.selectedProperty === 'opacity'}>Opacity</SpriteProperty>
               </Panel>
 
             )
@@ -171,6 +167,6 @@ export const TimelinePanel: FC = () => {
         </div>
         <Timeline/>
       </Panel>
-    </Panel>
+    </>
   )
 }

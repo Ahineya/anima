@@ -3,7 +3,7 @@ import {useStoreSubscribe} from "@anima/use-store-subscribe";
 import {Panel} from "../components/ui/panel/panel";
 import {Viewport} from "../components/viewport/viewport";
 import {engine} from "../engine/engine";
-import React, {useEffect} from "react";
+import React, {useEffect, useMemo} from "react";
 import {Sprite} from "../engine/sprite";
 import myImage from "../assets/i.png";
 import myImage2 from "../assets/i2.png";
@@ -11,12 +11,14 @@ import {LeftPanel} from "../components/left-panel/left-panel";
 import {RightPanel} from "../components/right-panel/right-panel";
 import {TimelinePanel} from "../components/timeline-panel/timeline-panel";
 import {generateKeyBetween} from "fractional-indexing";
-import {sortByOrder} from "../helpers/sort-by-order.helper";
+import {uiStore} from "../stores/ui.store";
+import classNames from "classnames";
 
 
 export function App() {
 
   const gl = useStoreSubscribe(engine.gl);
+  const keybindingState = useStoreSubscribe(uiStore.keybindingsState);
 
   useEffect(() => {
     if (!gl) {
@@ -107,15 +109,40 @@ export function App() {
   }
 
   return (
-    <Panel direction="column" onDrop={onAddImage} onDragOver={e => e.preventDefault()}>
+    <Panel
+      direction="column"
+      onDrop={onAddImage}
+      onDragOver={e => e.preventDefault()}
+      className="app"
+    >
       <Panel direction="row">
         <LeftPanel/>
-        <Panel>
+        <Panel
+          onClick={() => uiStore.setKeybindingsState('viewport')}
+          className={classNames("app-viewport-panel", {
+            'panel-active': keybindingState === 'viewport'
+          })}
+        >
           <Viewport/>
         </Panel>
-        <RightPanel/>
+        <Panel
+          direction={'column'}
+          onClick={() => uiStore.setKeybindingsState('properties')}
+          className={classNames("app-properties-panel", {
+            'panel-active': keybindingState === 'properties'
+          })}>
+          <RightPanel/>
+        </Panel>
       </Panel>
-      <TimelinePanel/>
+      <Panel
+        direction={'row'}
+        onClick={() => uiStore.setKeybindingsState('timeline')}
+        className={classNames("app-timeline-panel", {
+          'panel-active': keybindingState === 'timeline'
+        })}
+      >
+        <TimelinePanel/>
+      </Panel>
     </Panel>
   );
 }

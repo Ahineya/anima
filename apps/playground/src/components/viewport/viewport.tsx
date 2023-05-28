@@ -3,6 +3,7 @@ import * as twgl from 'twgl.js';
 import {engine} from "../../engine/engine";
 import {programs} from "../../engine/programs";
 import {useKeybinding} from "../../hooks/use-keybinding.hook";
+import {allKeybindingStates, uiStore} from "../../stores/ui.store";
 
 function createOrthographicProjectionMatrix(width: number, height: number) {
   const aspectRatio = width / height;
@@ -33,6 +34,9 @@ export const Viewport: FC<IProps> = () => {
   const startTime = useRef(0);
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+
+    uiStore.setKeybindingsState('viewport');
+
     const canvas = canvasRef.current;
     if (!canvas) {
       return;
@@ -64,7 +68,7 @@ export const Viewport: FC<IProps> = () => {
 
   useKeybinding(' ', () => {
     engine.setIsPlaying(!engine.isPlaying.getValue());
-  });
+  }, true, allKeybindingStates);
 
   useLayoutEffect(() => {
     const canvas = canvasRef.current;

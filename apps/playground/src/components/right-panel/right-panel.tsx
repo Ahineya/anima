@@ -46,14 +46,7 @@ export const RightPanel: FC = () => {
   }
 
   return (
-    <Panel
-      direction={'column'}
-      style={{
-        maxWidth: 320,
-        minWidth: 320,
-        width: 320,
-        borderLeft: 'var(--border)'
-      }}>
+    <>
       <input
         type="range"
         min={0.1}
@@ -119,6 +112,6 @@ export const RightPanel: FC = () => {
             )
           }
         )}
-    </Panel>
+    </>
   )
 }

@@ -1,6 +1,34 @@
 .app {
-  flex: 1;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
+  .app-timeline-panel {
+    max-height: 320px;
+    min-height: 320px;
+    height: 320px;
+    position: relative;
+    border-top: var(--border);
+  }
+
+  .app-viewport-panel {
+    position: relative;
+  }
+
+  .app-properties-panel {
+    width: 320px;
+    min-width: 320px;
+    max-width: 320px;
+    position: relative;
+    border-left: var(--border);
+  }
+
+  .panel-active {
+    &:after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border: 2px solid var(--color-active);
+      pointer-events: none;
+    }
+  }
 }

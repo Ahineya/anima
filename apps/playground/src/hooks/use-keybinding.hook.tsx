@@ -1,9 +1,11 @@
 import {useEffect} from 'react';
+import {useStoreSubscribe} from "@anima/use-store-subscribe";
+import {uiStore} from "../stores/ui.store";
 
 const caseInsensitiveEquals = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
 
 export function useKeybinding(keybinding: string, callback: (e?: KeyboardEvent) => void, cancelInInputs = false, useInAppStates = ['default'], deps: any[] = []) {
-    const appState = 'default';
+    const keybindingsState = useStoreSubscribe(uiStore.keybindingsState);
 
     function keysMatch(key: string, e: KeyboardEvent) {
         if (caseInsensitiveEquals(key, 'delete') && caseInsensitiveEquals(e.key, 'backspace')) {
@@ -45,7 +47,7 @@ export function useKeybinding(keybinding: string, callback: (e?: KeyboardEvent) 
                 return;
             }
 
-            if (valueMatches(e) && useInAppStates.includes(appState)) {
+            if (valueMatches(e) && useInAppStates.includes(keybindingsState)) {
                 callback(e);
             }
         };
