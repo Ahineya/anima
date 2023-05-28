@@ -118,7 +118,7 @@ export function App() {
       <Panel direction="row">
         <LeftPanel/>
         <Panel
-          onClick={() => uiStore.setKeybindingsState('viewport')}
+          onMouseDown={() => uiStore.setKeybindingsState('viewport')}
           className={classNames("app-viewport-panel", {
             'panel-active': keybindingState === 'viewport'
           })}
@@ -127,7 +127,7 @@ export function App() {
         </Panel>
         <Panel
           direction={'column'}
-          onClick={() => uiStore.setKeybindingsState('properties')}
+          onMouseDown={() => uiStore.setKeybindingsState('properties')}
           className={classNames("app-properties-panel", {
             'panel-active': keybindingState === 'properties'
           })}>
@@ -136,7 +136,7 @@ export function App() {
       </Panel>
       <Panel
         direction={'row'}
-        onClick={() => uiStore.setKeybindingsState('timeline')}
+        onMouseDown={() => uiStore.setKeybindingsState('timeline')}
         className={classNames("app-timeline-panel", {
           'panel-active': keybindingState === 'timeline'
         })}

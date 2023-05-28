@@ -34,9 +34,6 @@ export const Viewport: FC<IProps> = () => {
   const startTime = useRef(0);
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-
-    uiStore.setKeybindingsState('viewport');
-
     const canvas = canvasRef.current;
     if (!canvas) {
       return;

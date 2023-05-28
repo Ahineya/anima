@@ -11,7 +11,6 @@ export const Timeline = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const setActiveFrame = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.stopPropagation();
     e.preventDefault();
 
     // If not left click
