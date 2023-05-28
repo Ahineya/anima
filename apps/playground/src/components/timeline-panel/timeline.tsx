@@ -75,6 +75,14 @@ export const Timeline = () => {
     engine.setCurrentFrame(newFrame);
   }, true, ['timeline']);
 
+  useKeybinding('delete', () => {
+    if (engine.isPlaying.getValue()) {
+      return;
+    }
+
+    engine.deleteCurrentKeyframe();
+  }, true, ['timeline']);
+
   const setActiveFrame = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
 

@@ -477,6 +477,45 @@ class Engine {
     return scaleVector;
   }
 
+  public deleteCurrentKeyframe() {
+    const state = this._state.getValue();
+    const currentFrame = state.currentFrame;
+    const currentSpriteId = state.selectedSpriteIds[0];
+    const currentSprite = state.sprites[currentSpriteId];
+
+    const kf = currentSprite.keyframes[state.selectedProperty];
+    const kfi = currentSprite.keyframesIndexes[state.selectedProperty];
+
+    if (kf[currentFrame]) {
+      const previousKeyframe = kf[currentFrame].prev;
+      const nextKeyframe = kf[currentFrame].next;
+
+      if (previousKeyframe !== null && nextKeyframe !== null) {
+        kf[previousKeyframe].next = nextKeyframe;
+        kf[nextKeyframe].prev = previousKeyframe;
+      } else if (previousKeyframe !== null) {
+        kf[previousKeyframe].next = null;
+      } else if (nextKeyframe !== null) {
+        kf[nextKeyframe].prev = null;
+      } else {
+        delete kf[currentFrame];
+        delete kfi[currentFrame];
+      }
+
+      delete kf[currentFrame];
+    }
+
+    if (kfi.indexOf(currentFrame) !== -1) {
+      kfi.splice(kfi.indexOf(currentFrame), 1);
+    }
+
+    this._state.next({
+      ...state,
+    });
+
+    this.calculateNextSpritesParams(state.currentFrame);
+  }
+
   public state() {
     return this._state.getValue();
   }
