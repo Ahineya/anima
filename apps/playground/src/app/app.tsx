@@ -118,7 +118,14 @@ export function App() {
       <Panel direction="row">
         <LeftPanel/>
         <Panel
-          onMouseDown={() => uiStore.setKeybindingsState('viewport')}
+          onMouseDownCapture={(e) => {
+            if (keybindingState === 'viewport') {
+              return;
+            }
+
+            e.stopPropagation();
+            uiStore.setKeybindingsState('viewport')
+          }}
           className={classNames("app-viewport-panel", {
             'panel-active': keybindingState === 'viewport'
           })}
@@ -136,7 +143,14 @@ export function App() {
       </Panel>
       <Panel
         direction={'row'}
-        onMouseDown={() => uiStore.setKeybindingsState('timeline')}
+        onMouseDownCapture={(e) => {
+          if (keybindingState === 'timeline') {
+            return;
+          }
+
+          e.stopPropagation();
+          uiStore.setKeybindingsState('timeline')
+        }}
         className={classNames("app-timeline-panel", {
           'panel-active': keybindingState === 'timeline'
         })}

@@ -70,7 +70,7 @@ export const TimelinePanel: FC = () => {
                   padding: '0 8px',
                   backgroundColor: sceneState.selectedSpriteIds.includes(s.id) ? 'var(--color-panel-selected)' : 'var(--color-panel)',
                 }}
-                onClick={() => {
+                onMouseDown={() => {
                   engine.setSelectedSpriteId(s.id);
                 }}
               >
@@ -104,9 +104,10 @@ export const TimelinePanel: FC = () => {
         </Panel>
         {
           sceneState.sortedSprites.map(s => {
+            // TODO: move event handlers to the children
             return (
               <Panel
-                onClick={() => {
+                onMouseDown={() => {
                   engine.setSelectedSpriteId(s.id);
                 }}
                 style={{
