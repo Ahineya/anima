@@ -258,8 +258,10 @@ class Engine {
       Object.assign(currentKeyframe, value);
     }
 
-    sprite.keyframesIndexes[type].push(frame);
-    sprite.keyframesIndexes[type].sort((a, b) => a - b);
+    if (!sprite.keyframesIndexes[type].includes(frame)) {
+      sprite.keyframesIndexes[type].push(frame);
+      sprite.keyframesIndexes[type].sort((a, b) => a - b);
+    }
 
     this._state.next({
       ...this._state.getValue(),
