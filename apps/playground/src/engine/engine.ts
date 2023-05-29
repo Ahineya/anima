@@ -145,6 +145,10 @@ class Engine {
         throw new Error(`Unknown render type ${renderType}`);
     }
 
+    if (this.programs.has(name)) {
+      return;
+    }
+
     this.programs.set(name, {
       name,
       program: twgl.createProgramInfo(gl, [vertexShaderSource, fragmentShaderSource]),

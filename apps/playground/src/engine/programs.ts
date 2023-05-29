@@ -88,6 +88,7 @@ uniform int u_rows;
 uniform int u_columns;
 
 uniform int u_selectedColumn;
+uniform int u_selectedRow;
 
 uniform vec4 u_color;
 
@@ -104,33 +105,44 @@ void main() {
   vec2 gridPosition = mod(pixelPosition, gridSize);
 
   float margin = 1.0;
-  if (gridPosition.y < margin || gridPosition.y > gridSize.y - margin) {
 
-    if (pixelPosition.y > float(u_rows) * gridSize.y + 1.0) {
-       discard;
-    }
-
-    if (pixelPosition.x > float(u_columns) * gridSize.x + 1.0) {
-        discard;
-    }
-
-      outColor = u_color;
+  if (pixelPosition.y > float(u_rows) * gridSize.y + 1.0) {
+     discard;
   }
 
-  if (gridPosition.x < margin || gridPosition.x > gridSize.x - margin) {
-    if (pixelPosition.y > float(u_rows) * gridSize.y + 1.0) {
-       discard;
-    }
+  if (pixelPosition.x > float(u_columns) * gridSize.x + 1.0) {
+     discard;
+  }
 
-    if (pixelPosition.x > float(u_columns) * gridSize.x + 1.0) {
-        discard;
-    }
-
-    if (int(pixelPosition.x / gridSize.x) == u_selectedColumn) {
-        outColor = vec4(0.8, 0.8, 0.8, 1.0);
+  if (gridPosition.y < margin || gridPosition.y > gridSize.y - margin) {
+    if (int(pixelPosition.y / gridSize.y) == u_selectedRow) {
+      outColor = vec4(0.8, 0.8, 0.8, 1.0);
     } else {
       outColor = u_color;
     }
+  }
+
+  if (gridPosition.x < margin || gridPosition.x > gridSize.x - margin) {
+    if (int(pixelPosition.x / gridSize.x) == u_selectedColumn) {
+      outColor = vec4(0.8, 0.8, 0.8, 1.0);
+    } else {
+      outColor = u_color;
+    }
+  }
+
+  if (gridPosition.y < margin || gridPosition.y > gridSize.y - margin) {
+    if (int(pixelPosition.y / gridSize.y) == u_selectedRow) {
+      outColor = vec4(0.8, 0.8, 0.8, 1.0);
+    }
+  }
+
+  // If the pixel is inside selected cell, draw a background.
+  if (int(pixelPosition.x / gridSize.x) == u_selectedColumn && int(pixelPosition.y / gridSize.y) == u_selectedRow) {
+    // Color A87A44
+    // A8 in hex is 168 in decimal
+    // 7A in hex is 122 in decimal
+    // 44 in hex is 68 in decimal
+    outColor = vec4(168.0 / 255.0, 122.0 / 255.0, 68.0 / 255.0, 1.0);
   }
 }
 `;

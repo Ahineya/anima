@@ -85,27 +85,29 @@ export const Viewport: FC<IProps> = () => {
       engine.addProgram(name, vertexShaderSource, fragmentShaderSource, bufferInfoArrays, renderType);
     });
 
+    console.log('init')
+
     return () => {
-      engine.programs.forEach(({program, bufferInfo}) => {
-        gl.deleteProgram(program.program);
-
-        if (bufferInfo.attribs) {
-          Object.values(bufferInfo.attribs).forEach((attrib) => {
-            gl.deleteBuffer(attrib.buffer);
-          });
-        }
-
-        if (bufferInfo.indices) {
-          gl.deleteBuffer(bufferInfo.indices);
-        }
-      });
-
-      // Clean up textures for all objects
-      engine.state().sortedSprites.forEach((sprite) => {
-        if (sprite.texture) {
-          gl.deleteTexture(sprite.texture);
-        }
-      });
+      // engine.programs.forEach(({program, bufferInfo}) => {
+      //   gl.deleteProgram(program.program);
+      //
+      //   if (bufferInfo.attribs) {
+      //     Object.values(bufferInfo.attribs).forEach((attrib) => {
+      //       gl.deleteBuffer(attrib.buffer);
+      //     });
+      //   }
+      //
+      //   if (bufferInfo.indices) {
+      //     gl.deleteBuffer(bufferInfo.indices);
+      //   }
+      // });
+      //
+      // // Clean up textures for all objects
+      // engine.state().sortedSprites.forEach((sprite) => {
+      //   if (sprite.texture) {
+      //     gl.deleteTexture(sprite.texture);
+      //   }
+      // });
     }
   }, []);
 

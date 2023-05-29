@@ -1,4 +1,4 @@
-import {useLayoutEffect, useRef} from "react";
+import React, {useLayoutEffect, useRef} from "react";
 import * as twgl from "twgl.js";
 import {programs} from "../../engine/programs";
 import {engine} from "../../engine/engine";
@@ -188,6 +188,20 @@ export const Timeline = () => {
 
       gl.useProgram(timelineGridProgramInfo.program);
 
+      // Find selected row
+      const selectedSpriteId = engine.state().selectedSpriteIds[0];
+      const selectedSpriteIndex = engine.state().sortedSprites.findIndex(sprite => sprite.id === selectedSpriteId);
+
+      const selectedProperty = engine.state().selectedProperty;
+
+      let selectedPropertyIndex = -1;
+
+      if (engine.state().sortedSprites[selectedSpriteIndex]) {
+        selectedPropertyIndex = Object.keys(engine.state().sortedSprites[selectedSpriteIndex].keyframes).findIndex(property => property === selectedProperty);
+      }
+
+      const selectedRow = selectedSpriteIndex * 4 + selectedPropertyIndex;
+
       twgl.setUniforms(timelineGridProgramInfo, {
         u_resolution: [gl.canvas.width, gl.canvas.height],
         u_gridSize: [blockWidthInPixels, blockHeightInPixels],
@@ -199,6 +213,7 @@ export const Timeline = () => {
         u_columns: engine.state().lengthInFrames,
 
         u_selectedColumn: engine.state().currentFrame,
+        u_selectedRow: selectedRow,
 
         u_model: twgl.m4.translate(twgl.m4.identity(), [0, 0, 0]),
       });
@@ -216,7 +231,8 @@ export const Timeline = () => {
         const initialXOffset = scaleX * 24;
         const oneFrameXOffset = scaleX * 48;
 
-        Object.values(sprite.keyframes.position).forEach((keyframe, keyframeIndex) => {
+        // TODO: It can be simplified by iterating over sprite.keyframes keys
+        Object.values(sprite.keyframes.position).forEach((keyframe) => {
 
           if (keyframe.frame > engine.state().lengthInFrames) {
             return;
@@ -230,15 +246,19 @@ export const Timeline = () => {
           const scaled = twgl.m4.scale(translated, [scaleX * 12, scaleY * 12, 0]);
           const rotated = twgl.m4.rotateZ(scaled, rot45);
 
+          const keyframeColor = sprite.id === selectedSpriteId && keyframe.frame === engine.state().currentFrame && selectedProperty === 'position'
+            ? [0x00 / 255, 0x00 / 255, 0x00 / 255, 1]
+            : [0xAD / 255, 0xA8 / 255, 0xAD / 255, 1];
+
           twgl.setUniforms(keyframeProgramInfo, {
-            u_color: [0xAD / 255, 0xA8 / 255, 0xAD / 255, 1],
+            u_color: keyframeColor,
             u_model: rotated,
           });
 
           twgl.drawBufferInfo(gl, timelineGridBufferInfo);
         });
 
-        Object.values(sprite.keyframes.rotation).forEach((keyframe, keyframeIndex) => {
+        Object.values(sprite.keyframes.rotation).forEach((keyframe) => {
           if (keyframe.frame > engine.state().lengthInFrames) {
             return;
           }
@@ -251,15 +271,19 @@ export const Timeline = () => {
           const scaled = twgl.m4.scale(translated, [scaleX * 12, scaleY * 12, 0]);
           const rotated = twgl.m4.rotateZ(scaled, rot45);
 
+          const keyframeColor = sprite.id === selectedSpriteId && keyframe.frame === engine.state().currentFrame && selectedProperty === 'rotation'
+            ? [0x00 / 255, 0x00 / 255, 0x00 / 255, 1]
+            : [0xAD / 255, 0xA8 / 255, 0xAD / 255, 1];
+
           twgl.setUniforms(keyframeProgramInfo, {
-            u_color: [0xAD / 255, 0xA8 / 255, 0xAD / 255, 1],
+            u_color: keyframeColor,
             u_model: rotated,
           });
 
           twgl.drawBufferInfo(gl, timelineGridBufferInfo);
         });
 
-        Object.values(sprite.keyframes.scale).forEach((keyframe, keyframeIndex) => {
+        Object.values(sprite.keyframes.scale).forEach((keyframe) => {
           if (keyframe.frame > engine.state().lengthInFrames) {
             return;
           }
@@ -272,8 +296,12 @@ export const Timeline = () => {
           const scaled = twgl.m4.scale(translated, [scaleX * 12, scaleY * 12, 0]);
           const rotated = twgl.m4.rotateZ(scaled, rot45);
 
+          const keyframeColor = sprite.id === selectedSpriteId && keyframe.frame === engine.state().currentFrame && selectedProperty === 'scale'
+            ? [0x00 / 255, 0x00 / 255, 0x00 / 255, 1]
+            : [0xAD / 255, 0xA8 / 255, 0xAD / 255, 1];
+
           twgl.setUniforms(keyframeProgramInfo, {
-            u_color: [0xAD / 255, 0xA8 / 255, 0xAD / 255, 1],
+            u_color: keyframeColor,
             u_model: rotated,
           });
 
