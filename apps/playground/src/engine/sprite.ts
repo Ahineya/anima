@@ -60,6 +60,18 @@ export class Sprite {
     this.height = image.height;
   }
 
+  public getPixel(x: number, y: number) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1;
+      canvas.height = 1;
+      canvas.getContext('2d')!.drawImage(this.image, x, y, 1, 1, 0, 0, 1, 1);
+      const pixelData = canvas.getContext('2d')!.getImageData(0, 0, 1, 1).data;
+
+      canvas.remove();
+
+      return pixelData;
+  }
+
   static createTexture(gl: WebGLRenderingContext, image: HTMLImageElement): WebGLTexture {
     return twgl.createTexture(gl, {
       src: image,
@@ -87,6 +99,7 @@ export class Sprite {
         sprite.order = order || generateKeyBetween(null, null);
 
         sprite.src = url;
+        sprite.image = image;
 
         resolve(sprite);
       });
@@ -94,7 +107,7 @@ export class Sprite {
     });
   }
 
-  static toJSON(sprite: Sprite): Omit<Sprite, 'texture'> {
+  static toJSON(sprite: Sprite): Omit<Omit<Sprite, 'texture'>, 'getPixel'> {
     return {
       id: sprite.id,
       type: sprite.type,
@@ -111,7 +124,7 @@ export class Sprite {
     };
   }
 
-  static async fromJSON(gl: WebGLRenderingContext, json: Omit<Sprite, 'texture'>): Promise<Sprite> {
+  static async fromJSON(gl: WebGLRenderingContext, json: Omit<Omit<Sprite, 'texture'>, 'getPixel'>): Promise<Sprite> {
     const sprite = await Sprite.create(gl, json.src, {
       x: json.x,
       y: json.y,

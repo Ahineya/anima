@@ -3,7 +3,7 @@ import * as twgl from 'twgl.js';
 import {engine} from "../../engine/engine";
 import {programs} from "../../engine/programs";
 import {useKeybinding} from "../../hooks/use-keybinding.hook";
-import {allKeybindingStates, uiStore} from "../../stores/ui.store";
+import {allKeybindingStates} from "../../stores/ui.store";
 
 function createOrthographicProjectionMatrix(width: number, height: number) {
   const aspectRatio = width / height;
@@ -53,6 +53,59 @@ export const Viewport: FC<IProps> = () => {
     const normalizedY = -1 * (canvasY - rect.height / 2) * engine.state().scale;
 
     console.log(normalizedX, normalizedY);
+
+    let clickedSprite = null;
+
+    engine.state().sortedSprites.forEach((sprite) => {
+      if (!sprite.texture) {
+        return;
+      }
+
+      const spriteState = engine.nextSpritesParams.getValue()[sprite.id];
+      if (!spriteState) {
+        return;
+      }
+
+      const [x, y] = spriteState.position;
+      const rotation = spriteState.rotation;
+      const [width, height] = spriteState.scale;
+      const rotInRad = rotation * Math.PI / 180;
+
+      const modelMatrix = twgl.m4.identity();
+      twgl.m4.translate(twgl.m4.identity(), [x * 1, y * 1, 0], modelMatrix); // HERE IS NO DEVICEPIXELRATIO MULTIPLIER. Whyyyyy?
+      twgl.m4.scale(modelMatrix, [width, height, 1], modelMatrix);
+      twgl.m4.rotateZ(modelMatrix, rotInRad, modelMatrix);
+
+      twgl.m4.inverse(modelMatrix, modelMatrix);
+
+      // Transform to sprite local space
+      const localPos = twgl.m4.transformPoint(modelMatrix, [normalizedX, normalizedY, 0]);
+
+      // Perform hit test
+      if (localPos[0] >= -1/2 && localPos[0] <= 1/2 &&
+        localPos[1] >= -1/2 && localPos[1] <= 1/2) {
+
+
+        const realSpriteCoordX = (localPos[0] + 1/2) * width;
+        const realSpriteCoordY = height - (localPos[1] + 1/2) * height;
+
+        console.log(realSpriteCoordX, realSpriteCoordY);
+
+        const pixelData = sprite.getPixel(realSpriteCoordX, realSpriteCoordY);
+        console.log(pixelData);
+
+        // Check for transparency
+        // const pixelData = /* get pixel data from sprite.texture at localPos[0] and localPos[1] */
+        if (pixelData[3] > 0) { // if alpha value is above threshold
+          clickedSprite = sprite.id;
+          console.log('hit', sprite.name);
+        }
+      }
+    });
+
+    if (clickedSprite) {
+      engine.setSelectedSpriteId(clickedSprite);
+    }
   }
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -86,29 +139,6 @@ export const Viewport: FC<IProps> = () => {
     });
 
     console.log('init')
-
-    return () => {
-      // engine.programs.forEach(({program, bufferInfo}) => {
-      //   gl.deleteProgram(program.program);
-      //
-      //   if (bufferInfo.attribs) {
-      //     Object.values(bufferInfo.attribs).forEach((attrib) => {
-      //       gl.deleteBuffer(attrib.buffer);
-      //     });
-      //   }
-      //
-      //   if (bufferInfo.indices) {
-      //     gl.deleteBuffer(bufferInfo.indices);
-      //   }
-      // });
-      //
-      // // Clean up textures for all objects
-      // engine.state().sortedSprites.forEach((sprite) => {
-      //   if (sprite.texture) {
-      //     gl.deleteTexture(sprite.texture);
-      //   }
-      // });
-    }
   }, []);
 
   useLayoutEffect(() => {
@@ -282,7 +312,7 @@ export const Viewport: FC<IProps> = () => {
           u_projection: projectionMatrix,
           u_model: modelMatrix,
           u_view: viewMatrix,
-          u_color: [0, 0, 1, 1],
+          u_color: [1, 1, 1, 1],
         });
 
         twgl.drawBufferInfo(gl, cameraProgram.bufferInfo, cameraProgram.renderType);
