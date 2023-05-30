@@ -39,6 +39,10 @@ export const Viewport: FC<IProps> = () => {
       return;
     }
 
+    if (engine.isPlaying.getValue()) {
+      return;
+    }
+
     // Cursor coordinates
     const x = e.clientX;
     const y = e.clientY;
@@ -73,8 +77,8 @@ export const Viewport: FC<IProps> = () => {
 
       const modelMatrix = twgl.m4.identity();
       twgl.m4.translate(twgl.m4.identity(), [x * 1, y * 1, 0], modelMatrix); // HERE IS NO DEVICEPIXELRATIO MULTIPLIER. Whyyyyy?
-      twgl.m4.scale(modelMatrix, [width, height, 1], modelMatrix);
       twgl.m4.rotateZ(modelMatrix, rotInRad, modelMatrix);
+      twgl.m4.scale(modelMatrix, [width, height, 1], modelMatrix);
 
       twgl.m4.inverse(modelMatrix, modelMatrix);
 
@@ -239,8 +243,8 @@ export const Viewport: FC<IProps> = () => {
 
         const modelMatrix = twgl.m4.identity();
         twgl.m4.translate(twgl.m4.identity(), [x * devicePixelRatio, y * devicePixelRatio, i * 0.0001], modelMatrix);
-        twgl.m4.scale(modelMatrix, [width, height, 0], modelMatrix);
         twgl.m4.rotateZ(modelMatrix, rotInRad, modelMatrix);
+        twgl.m4.scale(modelMatrix, [width, height, 0], modelMatrix);
 
         twgl.setUniforms(spriteProgram.program, {
           u_texture: sprite.texture,
@@ -288,7 +292,7 @@ export const Viewport: FC<IProps> = () => {
 
       engine.state().sortedSprites.forEach((sprite) => {
 
-        if (!engine.state().selectedSpriteIds.includes(sprite.id)) {
+        if (!engine.state().selectedSpriteIds.includes(sprite.id) || playing) {
           return;
         }
 
@@ -305,8 +309,8 @@ export const Viewport: FC<IProps> = () => {
         const rotInRad = rotation * Math.PI / 180;
         const modelMatrix = twgl.m4.identity();
         twgl.m4.translate(twgl.m4.identity(), [x * devicePixelRatio, y * devicePixelRatio, z], modelMatrix);
-        twgl.m4.scale(modelMatrix, [width, height, 0], modelMatrix);
         twgl.m4.rotateZ(modelMatrix, rotInRad, modelMatrix);
+        twgl.m4.scale(modelMatrix, [width, height, 0], modelMatrix);
 
         twgl.setUniforms(cameraProgram.program, {
           u_projection: projectionMatrix,
@@ -328,8 +332,6 @@ export const Viewport: FC<IProps> = () => {
         //   twgl.drawBufferInfo(gl, cameraProgram.bufferInfo, cameraProgram.renderType);
         // }
       });
-
-      gl.lineWidth(1);
 
       /**
        * Increment frame if playing. Get current frame based on time and fps. Always start from 0
