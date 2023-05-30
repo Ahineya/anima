@@ -60,6 +60,7 @@ export const Viewport: FC<IProps> = () => {
 
     let clickedSprite = null;
 
+    // TODO: Use culling to reduce number of sprites to check
     engine.state().sortedSprites.forEach((sprite) => {
       if (!sprite.texture) {
         return;
@@ -89,18 +90,13 @@ export const Viewport: FC<IProps> = () => {
       if (localPos[0] >= -1/2 && localPos[0] <= 1/2 &&
         localPos[1] >= -1/2 && localPos[1] <= 1/2) {
 
-
         const realSpriteCoordX = (localPos[0] + 1/2) * width;
         const realSpriteCoordY = height - (localPos[1] + 1/2) * height;
 
-        console.log(realSpriteCoordX, realSpriteCoordY);
-
         const pixelData = sprite.getPixel(realSpriteCoordX, realSpriteCoordY);
-        console.log(pixelData);
 
         // Check for transparency
-        // const pixelData = /* get pixel data from sprite.texture at localPos[0] and localPos[1] */
-        if (pixelData[3] > 0) { // if alpha value is above threshold
+        if (pixelData[3] > 0 || engine.state().selectedSpriteIds.includes(sprite.id)) { // if alpha value is above threshold
           clickedSprite = sprite.id;
           console.log('hit', sprite.name);
         }
@@ -109,6 +105,8 @@ export const Viewport: FC<IProps> = () => {
 
     if (clickedSprite) {
       engine.setSelectedSpriteId(clickedSprite);
+    } else {
+      engine.clearSelectedSpriteIds();
     }
   }
 

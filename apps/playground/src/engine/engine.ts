@@ -80,6 +80,13 @@ class Engine {
     });
   }
 
+  public clearSelectedSpriteIds() {
+    this._state.next({
+      ...this._state.getValue(),
+      selectedSpriteIds: [],
+    });
+  }
+
   public setSelectedSpriteByIndex(index: number) {
     const sortedSprites = this._state.getValue().sortedSprites;
 
